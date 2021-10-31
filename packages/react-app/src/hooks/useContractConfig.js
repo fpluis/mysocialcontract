@@ -9,7 +9,8 @@ export const useContractConfig = () => {
       const result = await loadAppContracts();
       setContractsConfig(result);
     };
-    void loadFunc();
+
+    loadFunc();
   }, []);
   return contractsConfig;
 };
