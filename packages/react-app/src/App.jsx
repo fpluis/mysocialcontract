@@ -248,33 +248,39 @@ function App(props) {
   //keep track of contract balance to know how much has been staked total:
   const stakerContractBalance = useBalance(
     localProvider,
-    readContracts && readContracts.Staker ? readContracts.Staker.address : null,
+    readContracts && readContracts.PromotionFactory ? readContracts.PromotionFactory.address : null,
   );
   if (DEBUG) console.log("💵 stakerContractBalance", stakerContractBalance);
 
   // ** keep track of total 'threshold' needed of ETH
-  const threshold = useContractReader(readContracts, "Staker", "threshold");
+  const threshold = useContractReader(readContracts, "PromotionFactory", "threshold");
   console.log("💵 threshold:", threshold);
 
   // ** keep track of a variable from the contract in the local React state:
-  const balanceStaked = useContractReader(readContracts, "Staker", "balances", [address]);
+  const balanceStaked = useContractReader(readContracts, "PromotionFactory", "balances", [address]);
   console.log("💸 balanceStaked:", balanceStaked);
 
   // ** 📟 Listen for broadcast events
-  const stakeEvents = useEventListener(readContracts, "Staker", "Stake", localProvider, 1);
-  console.log("📟 stake events:", stakeEvents);
+  const promotionCreatedEvents = useEventListener(
+    readContracts,
+    "PromotionFactory",
+    "PromotionCreated",
+    localProvider,
+    1,
+  );
+  console.log("📟 PromotionCreated events:", promotionCreatedEvents);
 
   // ** keep track of a variable from the contract in the local React state:
-  const timeLeft = useContractReader(readContracts, "Staker", "timeLeft");
+  const timeLeft = useContractReader(readContracts, "PromotionFactory", "timeLeft");
   console.log("⏳ timeLeft:", timeLeft);
 
   // ** Listen for when the contract has been 'completed'
-  const complete = useContractReader(readContracts, "ExampleExternalContract", "completed");
+  const complete = useContractReader(readContracts, "Promotion", "completed");
   console.log("✅ complete:", complete);
 
   const exampleExternalContractBalance = useBalance(
     localProvider,
-    readContracts && readContracts.ExampleExternalContract ? readContracts.ExampleExternalContract.address : null,
+    readContracts && readContracts.Promotion ? readContracts.Promotion.address : null,
   );
   if (DEBUG) console.log("💵 exampleExternalContractBalance", exampleExternalContractBalance);
 
@@ -282,7 +288,7 @@ function App(props) {
   if (complete) {
     completeDisplay = (
       <div style={{ padding: 64, backgroundColor: "#eeffef", fontWeight: "bolder" }}>
-        🚀 🎖 👩‍🚀 - Staking App triggered `ExampleExternalContract` -- 🎉 🍾 🎊
+        🚀 🎖 👩‍🚀 - Staking App triggered `Promotion` -- 🎉 🍾 🎊
         <Balance balance={exampleExternalContractBalance} fontSize={64} /> ETH staked!
       </div>
     );
@@ -492,7 +498,7 @@ function App(props) {
               }}
               to="/"
             >
-              Staker UI
+              Promotion UI
             </Link>
           </Menu.Item>
           <Menu.Item key="/contracts">
@@ -530,7 +536,7 @@ function App(props) {
               <Button
                 type={"default"}
                 onClick={() => {
-                  tx(writeContracts.Staker.execute());
+                  tx(writeContracts.PromotionFactory.execute());
                 }}
               >
                 📡 Execute!
@@ -541,7 +547,7 @@ function App(props) {
               <Button
                 type={"default"}
                 onClick={() => {
-                  tx(writeContracts.Staker.withdraw());
+                  tx(writeContracts.PromotionFactory.withdraw());
                 }}
               >
                 🏧 Withdraw
@@ -552,7 +558,7 @@ function App(props) {
               <Button
                 type={balanceStaked ? "success" : "primary"}
                 onClick={() => {
-                  tx(writeContracts.Staker.stake({ value: ethers.utils.parseEther("0.5") }));
+                  tx(writeContracts.PromotionFactory.deposit({ value: ethers.utils.parseEther("0.5") }));
                 }}
               >
                 🥩 Stake 0.5 ether!
@@ -566,13 +572,14 @@ function App(props) {
             */}
 
             <div style={{ width: 500, margin: "auto", marginTop: 64 }}>
-              <div>Stake Events:</div>
+              <div>Promotions Created:</div>
               <List
-                dataSource={stakeEvents}
+                dataSource={promotionCreatedEvents}
                 renderItem={item => {
+                  console.log(`Promotion: ${JSON.stringify(item)}`);
                   return (
                     <List.Item key={item.blockNumber}>
-                      <Address value={item.args[0]} ensProvider={mainnetProvider} fontSize={16} /> =>
+                      <Address value={item.args[0]} ensProvider={mainnetProvider} fontSize={16} /> ={">"}
                       <Balance balance={item.args[1]} />
                     </List.Item>
                   );
@@ -593,7 +600,7 @@ function App(props) {
           </Route>
           <Route path="/contracts">
             <Contract
-              name="Staker"
+              name="PromotionFactory"
               signer={userSigner}
               provider={localProvider}
               address={address}
@@ -601,7 +608,7 @@ function App(props) {
               contractConfig={contractConfig}
             />
             <Contract
-              name="ExampleExternalContract"
+              name="Promotion"
               signer={userSigner}
               provider={localProvider}
               address={address}
@@ -628,17 +635,6 @@ function App(props) {
           blockExplorer={blockExplorer}
         />
         {faucetHint}
-      </div>
-
-      <div style={{ marginTop: 32, opacity: 0.5 }}>
-        {/* Add your address here */}
-        Created by <Address value={"Your...address"} ensProvider={mainnetProvider} fontSize={16} />
-      </div>
-
-      <div style={{ marginTop: 32, opacity: 0.5 }}>
-        <a target="_blank" style={{ padding: 32, color: "#000" }} href="https://github.com/scaffold-eth/scaffold-eth">
-          🍴 Fork me!
-        </a>
       </div>
 
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
