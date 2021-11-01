@@ -1,6 +1,7 @@
 import React from "react";
 import { ThemeSwitcherProvider } from "react-css-theme-switcher";
 import ReactDOM from "react-dom";
+import { BlockchainProvider, AuthenticationProvider, RemoteStorageProvider } from "./providers";
 import App from "./App";
 import "./index.css";
 
@@ -13,7 +14,13 @@ const prevTheme = window.localStorage.getItem("theme");
 
 ReactDOM.render(
   <ThemeSwitcherProvider themeMap={themes} defaultTheme={prevTheme || "light"}>
-    <App />
+    <AuthenticationProvider>
+      <RemoteStorageProvider>
+        <BlockchainProvider>
+          <App />
+        </BlockchainProvider>
+      </RemoteStorageProvider>
+    </AuthenticationProvider>
   </ThemeSwitcherProvider>,
   document.getElementById("root"),
 );

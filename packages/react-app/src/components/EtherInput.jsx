@@ -47,7 +47,7 @@ export default function EtherInput(props) {
           } else {
             setMode("USD");
             if (currentValue) {
-              const usdValue = "" + (parseFloat(currentValue) * props.price).toFixed(2);
+              const usdValue = `${(parseFloat(currentValue) * props.price).toFixed(2)}`;
               setDisplay(usdValue);
             } else {
               setDisplay(currentValue);
@@ -78,7 +78,7 @@ export default function EtherInput(props) {
 
   return (
     <Input
-      placeholder={props.placeholder ? props.placeholder : "amount in " + mode}
+      placeholder={props.placeholder ? props.placeholder : `amount in ${mode}`}
       autoFocus={props.autoFocus}
       prefix={prefix}
       value={display}
@@ -93,6 +93,7 @@ export default function EtherInput(props) {
             if (typeof props.onChange === "function") {
               props.onChange(ethValue);
             }
+
             setDisplay(newValue);
           } else {
             setDisplay(newValue);
@@ -102,6 +103,7 @@ export default function EtherInput(props) {
           if (typeof props.onChange === "function") {
             props.onChange(newValue);
           }
+
           setDisplay(newValue);
         }
       }}

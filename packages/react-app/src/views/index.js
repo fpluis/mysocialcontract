@@ -1,3 +1,3 @@
-export { default as ExampleUI } from "./ExampleUI";
-export { default as Hints } from "./Hints";
-export { default as Subgraph } from "./Subgraph";
+export { default as HomeView } from "./Home";
+export { default as RequestCreateView } from "./RequestCreate";
+export { default as RequestsView } from "./Requests";

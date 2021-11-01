@@ -1,3 +1,7 @@
+export const MORALIS_SERVER_ID = "https://p0zj4plzl7yv.usemoralis.com:2053/server";
+
+export const MORALIS_APP_ID = "9mLyP0kuz3sUAJZrGU2aULTo82eDD0kRboqgM4yB";
+
 // MY INFURA_ID, SWAP IN YOURS FROM https://infura.io/dashboard/ethereum
 export const INFURA_ID = "460f40a260564ac4a4f4b3fffb032dad";
 
@@ -13,7 +17,7 @@ export const NETWORKS = {
     color: "#666666",
     chainId: 31337,
     blockExplorer: "",
-    rpcUrl: "http://" + window.location.hostname + ":8545",
+    rpcUrl: `http://${window.location.hostname}:8545`,
   },
   mainnet: {
     name: "mainnet",
@@ -113,21 +117,6 @@ export const NETWORKS = {
     rpcUrl: `https://arb1.arbitrum.io/rpc`,
     gasPrice: 0,
   },
-  localOptimismL1: {
-    name: "localOptimismL1",
-    color: "#f01a37",
-    chainId: 31337,
-    blockExplorer: "",
-    rpcUrl: "http://" + window.location.hostname + ":9545",
-  },
-  localOptimism: {
-    name: "localOptimism",
-    color: "#f01a37",
-    chainId: 420,
-    blockExplorer: "",
-    rpcUrl: "http://" + window.location.hostname + ":8545",
-    gasPrice: 0,
-  },
   kovanOptimism: {
     name: "kovanOptimism",
     color: "#f01a37",
@@ -191,4 +180,6 @@ export const NETWORK = chainId => {
       return NETWORKS[n];
     }
   }
+
+  return null;
 };
