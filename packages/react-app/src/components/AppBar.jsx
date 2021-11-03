@@ -1,8 +1,9 @@
 import React from "react";
-import { HashRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Avatar, Button } from "antd";
 import { useAuthentication } from "../providers";
 import Blockies from "react-blockies";
+import { useThemeSwitcher } from "react-css-theme-switcher";
 
 const routeLinkStyle = {
   fontStyle: "normal",
@@ -36,11 +37,8 @@ const RouteLinks = () => {
         flexDirection: "row",
       }}
     >
-      <Link to={`/requests`}>
-        <Button style={routeLinkStyle}>Requests</Button>
-      </Link>
-      <Link to={`/contracts`}>
-        <Button style={routeLinkStyle}>Contracts</Button>
+      <Link to={`/posts`}>
+        <Button style={routeLinkStyle}>Posts</Button>
       </Link>
     </div>
   );
@@ -48,32 +46,26 @@ const RouteLinks = () => {
 
 export default function AppBar() {
   const { user, login } = useAuthentication();
+  const { currentTheme } = useThemeSwitcher();
+
   return (
-    <HashRouter>
-      <div className="app-left app-bar-box">
+    <>
+      <div className="app-left app-bar-box" style={{ background: currentTheme === "light" ? "white" : "#222222" }}>
         <Link to={`/`}>
           <Button style={routeLinkStyle}>
             {/* <img src="/popularize.png" width="48" /> */}
             <p>Popularize</p>
           </Button>
         </Link>
-        <div
-          style={{
-            borderLeft: "1px solid #282828",
-            width: "2px",
-            height: "40px",
-            marginRight: "14px",
-          }}
-        />
         <RouteLinks />
       </div>
       <div className="app-right app-bar-box">
         {user.authenticated() ? (
           <>
-            <Link to={`/request/create`}>
+            <Link to={`/post/create`}>
               <Button style={routeLinkStyle}>
                 {/* <img src="/popularize.png" width="48" /> */}
-                <p>Request</p>
+                <p>Create</p>
               </Button>
             </Link>
             <Profile key={Date.now()} user={user} />
@@ -82,6 +74,6 @@ export default function AppBar() {
           <Button onClick={() => login({ signingMessage: "Log into Popularize" })}>Log in</Button>
         )}
       </div>
-    </HashRouter>
+    </>
   );
 }

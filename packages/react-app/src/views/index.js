@@ -1,3 +1,4 @@
 export { default as HomeView } from "./Home";
-export { default as RequestCreateView } from "./RequestCreate";
-export { default as RequestsView } from "./Requests";
+export { default as PostCreateView } from "./PostCreate";
+export { default as PostDetailView } from "./PostDetail";
+export { default as PostsView } from "./Posts";

@@ -1,9 +1,10 @@
 import React from "react";
 import { ThemeSwitcherProvider } from "react-css-theme-switcher";
 import ReactDOM from "react-dom";
-import { BlockchainProvider, AuthenticationProvider, RemoteStorageProvider } from "./providers";
+import { LocalStorageProvider, BlockchainProvider, AuthenticationProvider, RemoteStorageProvider } from "./providers";
 import App from "./App";
 import "./index.css";
+import { HashRouter } from "react-router-dom";
 
 const themes = {
   dark: `${process.env.PUBLIC_URL}/dark-theme.css`,
@@ -14,13 +15,17 @@ const prevTheme = window.localStorage.getItem("theme");
 
 ReactDOM.render(
   <ThemeSwitcherProvider themeMap={themes} defaultTheme={prevTheme || "light"}>
-    <AuthenticationProvider>
-      <RemoteStorageProvider>
-        <BlockchainProvider>
-          <App />
-        </BlockchainProvider>
-      </RemoteStorageProvider>
-    </AuthenticationProvider>
+    <LocalStorageProvider>
+      <AuthenticationProvider>
+        <RemoteStorageProvider>
+          <BlockchainProvider>
+            <HashRouter basename={"/"}>
+              <App />
+            </HashRouter>
+          </BlockchainProvider>
+        </RemoteStorageProvider>
+      </AuthenticationProvider>
+    </LocalStorageProvider>
   </ThemeSwitcherProvider>,
   document.getElementById("root"),
 );

@@ -1,17 +1,14 @@
 import React from "react";
-import { HashRouter, Route, Switch } from "react-router-dom";
-import { RequestCreateView, HomeView, RequestsView } from "./views";
+import { BrowserRouter, Route, Switch } from "react-router-dom";
+import { PostCreateView, HomeView, PostsView, PostDetailView } from "./views";
 
 export const Routes = () => {
   return (
-    <>
-      <HashRouter basename={"/"}>
-        <Switch>
-          <Route exact path="/" component={() => <HomeView />} />
-          <Route path="/requests" component={() => <RequestsView />} />
-          <Route path="/request/create" component={() => <RequestCreateView />} />
-        </Switch>
-      </HashRouter>
-    </>
+    <Switch>
+      <Route exact path="/" component={() => <HomeView />} />
+      <Route path="/posts" component={() => <PostsView />} />
+      <Route exact path="/posts/:id" component={() => <PostDetailView />} />
+      <Route path="/post/create" component={() => <PostCreateView />} />
+    </Switch>
   );
 };

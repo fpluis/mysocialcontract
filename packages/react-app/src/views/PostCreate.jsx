@@ -2,13 +2,16 @@ import { Button, Form, Input, InputNumber, message } from "antd";
 import React from "react";
 import { useRemoteStorage } from "../providers";
 
-export default function RequestCreate() {
+export default function PostCreate() {
   const remoteStorage = useRemoteStorage();
 
-  const submit = async requestProps => {
-    console.log(`Props: ${JSON.stringify(requestProps)}`);
-    await remoteStorage.putRequest(requestProps);
-    message.success("Profile updated successfully!");
+  const submit = async props => {
+    console.log(`Props: ${JSON.stringify(props)}`);
+    await remoteStorage.putPost(props);
+    message.success("Post successfully created! Redirecting you to posts list");
+    setTimeout(() => {
+      window.location.href = "/posts/";
+    }, 2000);
   };
 
   return (
@@ -26,7 +29,7 @@ export default function RequestCreate() {
         <Form.Item name="description" label="Description">
           <Input.TextArea rows={16} />
         </Form.Item>
-        <Form.Item name="share" label="Publicist share">
+        <Form.Item name="share" label="Patron's share">
           <InputNumber autoFocus min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item name="threshold" label="Threshold gains">
