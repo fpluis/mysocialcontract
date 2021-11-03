@@ -1,5 +1,6 @@
+export * from "./Messaging";
 export * from "./Blockchain";
-export * from "./AuthenticationProvider";
+export * from "./Authentication";
 export * from "./RemoteStorage";
 export * from "./LocalStorage";
 export * from "./TimeAgo";
