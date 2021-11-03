@@ -30,10 +30,10 @@ export default function PostCreate() {
           <Input.TextArea rows={16} />
         </Form.Item>
         <Form.Item name="share" label="Patron's share">
-          <InputNumber autoFocus min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
+          <InputNumber min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item name="threshold" label="Threshold gains">
-          <InputNumber autoFocus placeholder="In ETH" style={{ width: "100%" }} />
+          <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
 
         <Form.Item
