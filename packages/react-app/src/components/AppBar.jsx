@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Avatar, Button } from "antd";
+import { PlusCircleOutlined, MessageOutlined } from "@ant-design/icons";
 import { useAuthentication } from "../providers";
 import Blockies from "react-blockies";
 import { useThemeSwitcher } from "react-css-theme-switcher";
@@ -8,25 +9,12 @@ import { useThemeSwitcher } from "react-css-theme-switcher";
 const routeLinkStyle = {
   fontStyle: "normal",
   fontWeight: "normal",
-  fontSize: "16px",
-  lineHeight: "19px",
+  fontSize: "38px",
+  lineHeight: "38px",
+  height: "38px",
+  width: "38px",
   borderWidth: "0px",
-};
-
-const Profile = ({ user }) => {
-  const { image: profilePicture = null, ethAddress = "" } = user;
-  return (
-    <Link to={"/profile"}>
-      <Button shape="circle" style={{ backgroundColor: "white", padding: 0, ...routeLinkStyle }}>
-        <p style={{ display: "none" }}>{profilePicture}</p>
-        <Avatar
-          size={32}
-          alt={user.getUsername()}
-          src={profilePicture || <Blockies seed={ethAddress.toLowerCase()} />}
-        ></Avatar>
-      </Button>
-    </Link>
-  );
+  marginRight: "16px",
 };
 
 const RouteLinks = () => {
@@ -38,7 +26,7 @@ const RouteLinks = () => {
       }}
     >
       <Link to={`/posts`}>
-        <Button style={routeLinkStyle}>Posts</Button>
+        <Button style={{ ...routeLinkStyle, fontSize: "24px" }}>Posts</Button>
       </Link>
     </div>
   );
@@ -47,14 +35,18 @@ const RouteLinks = () => {
 export default function AppBar() {
   const { user, login } = useAuthentication();
   const { currentTheme } = useThemeSwitcher();
+  const { image: profilePicture = null, ethAddress = "" } = user;
+
+  const backgroundColor = currentTheme === "light" ? "white" : "#222222";
+  const inverseThemeColor = currentTheme === "light" ? "#222222" : "white";
 
   return (
     <>
-      <div className="app-left app-bar-box" style={{ background: currentTheme === "light" ? "white" : "#222222" }}>
+      <div className="app-left app-bar-box" style={{ background: backgroundColor }}>
         <Link to={`/`}>
           <Button style={routeLinkStyle}>
-            {/* <img src="/popularize.png" width="48" /> */}
-            <p>Popularize</p>
+            <img src="/popularize.png" width="38" />
+            {/* <p>Popularize</p> */}
           </Button>
         </Link>
         <RouteLinks />
@@ -62,16 +54,44 @@ export default function AppBar() {
       <div className="app-right app-bar-box">
         {user.authenticated() ? (
           <>
-            <Link to={`/post/create`}>
-              <Button style={routeLinkStyle}>
-                {/* <img src="/popularize.png" width="48" /> */}
-                <p>Create</p>
-              </Button>
+            <Link to={`/chat`} style={{ ...routeLinkStyle }}>
+              <Button
+                style={{ border: "none" }}
+                icon={<MessageOutlined style={{ color: inverseThemeColor, fontSize: 38 }} />}
+                shape="circle"
+              ></Button>
             </Link>
-            <Profile key={Date.now()} user={user} />
+            <Link to={`/post/create`} style={{ ...routeLinkStyle }}>
+              <Button
+                style={{ border: "none" }}
+                icon={<PlusCircleOutlined style={{ color: inverseThemeColor, fontSize: 38 }} />}
+                shape="circle"
+              ></Button>
+            </Link>
+            <Link to={"/profile"} style={{ ...routeLinkStyle, fontSize: "1px" }}>
+              <Button
+                type="default"
+                style={{ backgroundColor, border: "none" }}
+                icon={
+                  <Avatar
+                    size={38}
+                    alt={user.getUsername()}
+                    src={profilePicture || <Blockies size={38} seed={ethAddress.toLowerCase()} />}
+                  ></Avatar>
+                }
+                shape="circle"
+              ></Button>
+            </Link>
           </>
         ) : (
-          <Button onClick={() => login({ signingMessage: "Log into Popularize" })}>Log in</Button>
+          <Button
+            onClick={async () => {
+              const user = await login({ signingMessage: "Log into Popularize" });
+              console.log(`Logged in as user ${JSON.stringify(user)}`);
+            }}
+          >
+            Log in
+          </Button>
         )}
       </div>
     </>

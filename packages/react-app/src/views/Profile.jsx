@@ -1,7 +1,7 @@
 import { UploadOutlined } from "@ant-design/icons";
 import { Button, message, Upload } from "antd";
 import React, { useState } from "react";
-import { useRemoteStorage } from "../providers";
+import { useAuthentication, useRemoteStorage } from "../providers";
 
 const profilePictureUpload = event => {
   console.log("Upload event:", event);
@@ -56,7 +56,7 @@ const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "pi
       showUploadList={false}
       beforeUpload={beforeUpload}
       onChange={handleChange}
-      customRequest={customRequest}
+      // customRequest={customRequest}
     >
       {imageUrl ? (
         <img src={imageUrl} alt="avatar" style={{ width: "100%", cursor: "pointer" }} />
@@ -66,3 +66,13 @@ const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "pi
     </Upload>
   );
 };
+
+export default function ProfileView() {
+  const { logOut } = useAuthentication();
+  return (
+    <>
+      <AvatarUpload></AvatarUpload>
+      <Button onClick={() => logOut()}>Log out</Button>
+    </>
+  );
+}

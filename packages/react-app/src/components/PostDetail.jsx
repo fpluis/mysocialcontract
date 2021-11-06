@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useBlockchain } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
+import { Link } from "react-router-dom";
 
 const { RangePicker } = DatePicker;
 
@@ -64,6 +65,13 @@ export default function PostDetail({ post }) {
       <Row>
         <Button onClick={showModal}>Make offer</Button>
       </Row>
+      {author.id !== me.id && (
+        <Row>
+          <Link to={`/chat/${author.id}`}>
+            <Button>Send message</Button>
+          </Link>
+        </Row>
+      )}
 
       <Modal title="Make an offer" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
         <Col span={24}>

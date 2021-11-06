@@ -1,14 +1,16 @@
 import React, { useContext, useMemo } from "react";
 import { MORALIS_SERVER_ID, MORALIS_APP_ID } from "../constants";
 import Moralis from "moralis";
+import { CustomUser } from "../classes";
 
 Moralis.start({ serverUrl: MORALIS_SERVER_ID, appId: MORALIS_APP_ID });
+Moralis.Object.registerSubclass("_User", CustomUser);
 
 export const Authentication = {
-  user: Moralis.User.current() || { authenticated: () => false },
+  user: CustomUser.current() || { authenticated: () => false },
 
   login: () => {
-    const user = Moralis.User.current();
+    const user = CustomUser.current();
     if (user) {
       Authentication.user = user;
       return user;
@@ -26,7 +28,7 @@ export const Authentication = {
   },
 
   logOut: () => {
-    return Moralis.User.logOut();
+    return CustomUser.logOut();
   },
 };
 

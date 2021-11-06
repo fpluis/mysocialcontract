@@ -1,7 +1,13 @@
 import React from "react";
 import { ThemeSwitcherProvider } from "react-css-theme-switcher";
 import ReactDOM from "react-dom";
-import { LocalStorageProvider, BlockchainProvider, AuthenticationProvider, RemoteStorageProvider } from "./providers";
+import {
+  MessagingProvider,
+  LocalStorageProvider,
+  BlockchainProvider,
+  AuthenticationProvider,
+  RemoteStorageProvider,
+} from "./providers";
 import App from "./App";
 import "./index.css";
 import { HashRouter } from "react-router-dom";
@@ -20,7 +26,9 @@ ReactDOM.render(
         <RemoteStorageProvider>
           <BlockchainProvider>
             <HashRouter basename={"/"}>
-              <App />
+              <MessagingProvider>
+                <App />
+              </MessagingProvider>
             </HashRouter>
           </BlockchainProvider>
         </RemoteStorageProvider>
