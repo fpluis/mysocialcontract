@@ -1,14 +1,12 @@
 import Moralis from "moralis";
 import React, { useContext } from "react";
 import { useAuthentication, useLocalStorage } from ".";
-
-const PostObject = Moralis.Object.extend("Post");
-const UserObject = Moralis.Object.extend("User");
+import { CustomUser, PostObject } from "../classes";
 
 const POST_QUERY_LIMIT = 20;
 
-export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }) => ({
-  putPost: ({ title, description, share, threshold }) => {
+export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }) => {
+  const putPost = ({ title, description, share, threshold }) => {
     const post = new PostObject();
     return post
       .save({
@@ -26,9 +24,14 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
           console.log(`Error saving object,`, error);
         },
       );
-  },
+  };
 
-  getPosts: async (params = {}, page = 0) => {
+  const getUser = id => {
+    const query = new Moralis.Query(CustomUser);
+    return query.get(id);
+  };
+
+  const getPosts = async (params = {}, page = 0) => {
     console.log(`Get posts for page ${page} with params ${JSON.stringify(params)}`);
     const query = new Moralis.Query(PostObject);
     query.limit(POST_QUERY_LIMIT);
@@ -41,10 +44,9 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     console.log(`Posts: ${JSON.stringify(posts)}`);
     const postsWithAuthor = await Promise.all(
       posts.map(async post => {
-        const authorId = post.get("authorId");
-        const query = new Moralis.Query(UserObject);
-        const author = await query.get(authorId);
+        const author = await getUser(post.get("authorId"));
         post.set("author", {
+          id: author.id,
           username: author.get("username"),
           ethAddress: author.get("ethAddress"),
         });
@@ -58,9 +60,9 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       LocalStorage.setItem(value.objectId, value);
     });
     return postsWithAuthor;
-  },
+  };
 
-  getPost: id => {
+  const getPost = id => {
     console.log(`Get posts with id ${id}`);
     const cached = LocalStorage.getItem(id);
     if (cached) {
@@ -69,10 +71,17 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
     const query = new Moralis.Query(PostObject);
     return query.first();
-  },
-});
+  };
 
-const RemoteStorageProviderContext = React.createContext(RemoteStorage);
+  return {
+    putPost,
+    getUser,
+    getPosts,
+    getPost,
+  };
+};
+
+const RemoteStorageProviderContext = React.createContext(RemoteStorage());
 
 export const RemoteStorageProvider = ({ children = null }) => {
   const LocalStorage = useLocalStorage();
