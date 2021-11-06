@@ -1,5 +1,5 @@
 import Moralis from "moralis";
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useCallback, useState, useMemo } from "react";
 import { useAuthentication } from ".";
 import { CustomUser, MessageObject, ChatObject } from "../classes";
 
@@ -58,21 +58,31 @@ export const MessagingProvider = ({ children = null }) => {
   const [messageMap, setMessageMap] = useState({});
   const [subscriptionMap, setSubscriptionMap] = useState({});
   const [chatSubscription, setChatSubscription] = useState();
-  console.log(`MESSAGING PROVIDER`);
+  const [incomingMessages, setIncomingMessages] = useState();
 
   const addChat = chat => {
     setChats([...chats, chat]);
   };
 
+  const addMessages = (chatId, messages) => {
+    const current = messageMap[chatId] == null ? [] : messageMap[chatId];
+    const parsed = messages.map(message => JSON.parse(JSON.stringify(message)));
+    setMessageMap({ ...messageMap, [chatId]: current.concat(parsed) });
+  };
+
+  useEffect(() => {
+    if (incomingMessages) {
+      addMessages(incomingMessages.chatId, incomingMessages.messages);
+      setIncomingMessages(null);
+    }
+  }, [incomingMessages]);
+
   useEffect(() => {
     (async () => {
       if (!user.authenticated() || !user.id) {
-        // setIsLoading(true);
         return;
       }
 
-      console.log(`Running use chats memo`);
-      setMessageMap({});
       if (chatSubscription) {
         chatSubscription.unsubscribe();
       }
@@ -85,20 +95,19 @@ export const MessagingProvider = ({ children = null }) => {
       }
 
       const loadedChats = await loadChats(user.id);
-      console.log(`Loaded chats ${JSON.stringify(loadedChats)}`);
       setChats(loadedChats);
 
       loadedChats.forEach(chat => {
-        console.log(`Subscribing to ${chat.objectId}`);
-        subscribeToMessages(chat.objectId).then(subscription => {
-          subscriptionMap[chat.objectId] = subscription;
+        const { objectId: chatId } = chat;
+        subscribeToMessages(chatId).then(subscription => {
+          subscriptionMap[chatId] = subscription;
           setSubscriptionMap(subscriptionMap);
-          subscription.on("create", message => {
-            console.log(`Create event fired: ${JSON.stringify(message)}`);
-            const current = messageMap[chat.objectId] || [];
-            messageMap[chat.objectId] = [...current, message];
-            setMessageMap(messageMap);
+          subscription.on("create", messageObject => {
+            setIncomingMessages({ chatId, messages: [messageObject] });
           });
+        });
+        loadMessages(chatId).then(messages => {
+          setIncomingMessages({ chatId, messages });
         });
       });
 
@@ -106,14 +115,12 @@ export const MessagingProvider = ({ children = null }) => {
       subscription.on("create", chat => {
         console.log(`Chat created:`, chat);
         addChat(chat);
-        messageMap[chat.objectId] = [];
       });
-      console.log(`Loaded chats ${JSON.stringify(loadedChats)}`);
       setChatSubscription(subscription);
     })();
   }, []);
 
-  const messagingFunctions = () => ({
+  const messagingFunctions = {
     createChat: async (userId, otherId) => {
       const query = new Moralis.Query(CustomUser);
       const other = await query.get(otherId);
@@ -130,15 +137,9 @@ export const MessagingProvider = ({ children = null }) => {
     saveChat: async ({ participants }) => {
       const chat = new ChatObject();
       chat.set("participants", participants);
-      return chat.save().then(
-        chat => {
-          console.log(`Object saved successfully, result`, chat);
-          return chat;
-        },
-        error => {
-          console.log(`Error saving object,`, error);
-        },
-      );
+      return chat.save().then(error => {
+        console.log(`Error saving object,`, error);
+      });
     },
     sendMessage: async ({ chatId, content, source, destinatary }) => {
       const message = new MessageObject();
@@ -146,21 +147,14 @@ export const MessagingProvider = ({ children = null }) => {
       message.set("content", content);
       message.set("source", source);
       message.set("destinatary", destinatary);
-      return message
-        .save()
-        .then(() => {
-          console.log(`Message saved`, message);
-          const current = messageMap[chatId] || [];
-          messageMap[chatId] = [...current, message];
-        })
-        .catch(error => {
-          console.log(`Error saving message`, error);
-        });
+      return message.save().catch(error => {
+        console.log(`Error saving message`, error);
+      });
     },
-  });
+  };
 
   return (
-    <MessagingProviderContext.Provider value={{ chats, messageMap, ...messagingFunctions() }}>
+    <MessagingProviderContext.Provider value={{ chats, messageMap, ...messagingFunctions }}>
       {children}
     </MessagingProviderContext.Provider>
   );
@@ -168,36 +162,4 @@ export const MessagingProvider = ({ children = null }) => {
 
 export const useMessaging = () => {
   return useContext(MessagingProviderContext);
-};
-
-// export const useChats = userId => {
-//   console.log(`Use chats ${userId}`);
-//   return useContext(MessagingProviderContext).chats;
-// };
-
-export const useMessages = chatId => {
-  const { messageMap } = useContext(MessagingProviderContext);
-  const [messages, setMessagesLocal] = useState([]);
-
-  const setMessages = messages => {
-    setMessagesLocal(messages);
-    // eslint-disable-next-line require-atomic-updates
-    messageMap[chatId] = messages;
-  };
-
-  if (chatId == null) {
-    return [messages, setMessages];
-  }
-
-  useEffect(async () => {
-    if (messageMap[chatId] == null) {
-      const loadedMessages = await loadMessages(chatId);
-      console.log(`Loaded messages: ${JSON.stringify(loadedMessages)}`);
-      setMessagesLocal(loadedMessages);
-    } else {
-      setMessagesLocal(messageMap[chatId]);
-    }
-  }, [chatId]);
-
-  return [messages, setMessages];
 };

@@ -1,26 +1,26 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import "./Chat.css";
 import { useParams } from "react-router";
-import { useAuthentication, useChats, useMessages, useMessaging } from "../providers";
-import { ChatDetail, ChatWindow } from "../components";
-import { Input, Spin } from "antd";
+import { useAuthentication, useMessaging } from "../providers";
+import "react-chat-elements/dist/main.css";
+import { ChatList, MessageList, Input, Button, SideBar } from "react-chat-elements";
+
 // import { useThemeSwitcher } from "react-css-theme-switcher";
 
 export default function ChatView() {
   const { id: destinataryId } = useParams();
   const { user: me } = useAuthentication();
 
-  const { chats, sendMessage, createChat, saveChat } = useMessaging();
+  const { chats, messageMap, sendMessage, createChat, saveChat } = useMessaging();
   const [currentChat, setCurrentChat] = useState(destinataryId == null ? chats[0] : null);
-  const [messages, setMessages] = useMessages(currentChat == null ? null : currentChat.id);
+  const messages =
+    currentChat && currentChat.objectId && messageMap[currentChat.objectId] ? messageMap[currentChat.objectId] : [];
   const [isNewChat, setIsNewChat] = useState(false);
+  const textInputRef = useRef(null);
 
   useMemo(async () => {
-    console.log(`Destinatary id: ${destinataryId}; chats ${JSON.stringify(chats)}`);
     if (destinataryId && chats.length > 0) {
-      console.log(`Finding existing chat in ${JSON.stringify(chats)}`);
       const existingChat = chats.find(({ participants }) => participants.includes(destinataryId));
-      console.log(`Existing chat for ${destinataryId}: ${JSON.stringify(existingChat)}`);
       if (existingChat) {
         setCurrentChat(existingChat);
       } else {
@@ -34,58 +34,79 @@ export default function ChatView() {
     }
   }, [destinataryId, chats]);
 
-  // useMemo(() => {
-  //   if (messageMap && currentChat && messageMap[currentChat.id]) {
-  //     const newMessages = messageMap[currentChat.id];
-  //     setMessages(newMessages);
-  //   }
-  // }, [messageMap, currentChat]);
+  const sendMemoized = useCallback(() => {
+    return async () => {
+      console.log(`Hit send on input`, textInputRef);
+      const {
+        current: { input },
+      } = textInputRef;
+      const { value } = input;
+      input.value = "";
+      const message = { content: value, source: me.id, destinatary: destinataryId };
+      if (isNewChat) {
+        return saveChat(currentChat).then(chat => {
+          message.chatId = chat.objectId;
+          setIsNewChat(false);
+          return sendMessage(message);
+        });
+      }
 
-  console.log(`Current chat, Messages, Me, My chats`, currentChat, messages, me, chats);
+      console.log(`Messages now ${messages.length}`);
+      message.chatId = currentChat.objectId;
+      return sendMessage(message);
+    };
+  }, [textInputRef, currentChat, messages]);
 
-  const onSend = async event => {
-    console.log(`Hit send with event`, event);
-    const { target } = event;
-    const { value } = target;
-    target.value = "";
-    const message = { content: value, source: me.id, destinatary: destinataryId };
-    if (isNewChat) {
-      console.log(`Is new chat, creating chat with ${destinataryId}`);
-      return saveChat(currentChat).then(chat => {
-        message.chatId = chat.objectId;
-        setMessages([...messages, message]);
-        setIsNewChat(false);
-        return sendMessage(message);
-      });
-    }
+  const chatList = chats.map(chat => ({
+    id: chat.objectId,
+    avatar: chat.other.profilePicture || "https://avatars.dicebear.com/api/male/john.svg?background=%230000ff",
+    avatarFlexible: true,
+  }));
 
-    console.log(`Current chat`, currentChat);
-    message.chatId = currentChat.objectId;
-    setMessages([...messages, message]);
-    return sendMessage(message);
+  const messageList = messages.map(message => ({
+    id: message.objectId,
+    forwarded: false,
+    removeButton: true,
+    theme: "white",
+    view: "list",
+    type: "text",
+    position: message.source === me.id ? "right" : "left",
+    text: message.content,
+    date: new Date(message.createdAt),
+  }));
+
+  const addMessage = message => {
+    console.log(`Message added:`, message);
   };
 
   return (
-    <div className="wrapper">
-      <div className="container">
-        <div className="left">
-          <ul className="people">
-            {chats &&
-              chats.map((chat, key) => {
-                return <ChatDetail chat={chat} onClick={() => setCurrentChat(chat)} key={key} />;
-              })}
-          </ul>
-        </div>
-        <div className="right">
-          {currentChat == null ? (
-            <Spin />
-          ) : (
-            <>
-              <ChatWindow messages={messages} me={me} chat={currentChat} />
-              <Input className="write" type="text" onPressEnter={onSend} />
-            </>
-          )}
-        </div>
+    <div className="container">
+      <div className="chat-list">
+        <SideBar center={<ChatList dataSource={chatList} />} />
+      </div>
+      <div className="right-panel">
+        <MessageList className="message-list" lockable={true} downButtonBadge={10} dataSource={messageList} />
+
+        <Input
+          placeholder="Type here to send a message."
+          defaultValue=""
+          ref={textInputRef}
+          multiline={true}
+          // buttonsFloat='left'
+          onKeyPress={({ shiftKey, charCode }) => {
+            if (charCode === 13) {
+              if (shiftKey) {
+                return true;
+              }
+
+              sendMemoized()();
+              return false;
+            }
+
+            return null;
+          }}
+          rightButtons={<Button text="Send" onClick={() => sendMemoized()()} />}
+        />
       </div>
     </div>
   );

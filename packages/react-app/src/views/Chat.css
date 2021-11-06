@@ -1,6 +1,6 @@
 /* Source for the chat UI: https://codepen.io/Momciloo/pen/bEdbxY */
 
-*,
+/* *,
 *:before,
 *:after {
   box-sizing: border-box;
@@ -258,12 +258,6 @@ body {
   animation-duration: 1.5s;
 }
 
-/* .container .right .write {
- 
-  background-color: #eceff1;
-  width: 100%;
-} */
-
 .container .right .write {
   position: absolute;
   bottom: 0px;
@@ -406,4 +400,58 @@ body {
     margin-right: 0;
     opacity: 1;
   }
+} */
+
+/* body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, ubuntu;
+  background: navajowhite;
+  margin: 0;
+  padding: 0;
+} */
+/* 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+} */
+
+input,
+button {
+  font-family: verdana, ubuntu;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  min-height: 80%;
+  width: 70%;
+  overflow: auto;
+  position: absolute;
+  top: 48px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.chat-list {
+  min-width: 240px;
+  max-width: 380px;
+  overflow: auto;
+}
+
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-list {
+  flex: 1;
+  min-width: 140px;
+  overflow: auto;
+}
+
+.input-area {
+  height: 50px;
+  background: red;
 }
