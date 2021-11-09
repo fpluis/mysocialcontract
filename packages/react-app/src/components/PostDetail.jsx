@@ -1,10 +1,12 @@
-import { Button, Col, Modal, Row, DatePicker, InputNumber } from "antd";
+import { Button, Col, Modal, Row, DatePicker, InputNumber, Card, Avatar, Descriptions } from "antd";
 import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useBlockchain } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import { Link } from "react-router-dom";
+import Blockies from "react-blockies";
 
+const { Meta } = Card;
 const { RangePicker } = DatePicker;
 
 export default function PostDetail({ post }) {
@@ -13,13 +15,7 @@ export default function PostDetail({ post }) {
   const blockchain = useBlockchain();
   const { currentTheme } = useThemeSwitcher();
 
-  const title = post.get("title");
-  const createdAt = post.get("createdAt");
-  const description = post.get("description");
-  const share = post.get("share");
-  const threshold = post.get("threshold");
-  const author = post.get("author");
-
+  const { title, description, createdAt, share, threshold, author } = post;
   const [mentorCutAsPercentage, setMentorCut] = useState(share);
   const [startDate, setStartDate] = useState(Math.floor(new Date().getTime() / 1000));
   const [secondsAfter, setSecondsAfter] = useState(120);
@@ -47,31 +43,33 @@ export default function PostDetail({ post }) {
 
   return (
     <Col span={24}>
+      <Card
+        size="large"
+        style={{ width: 300 }}
+        cover={
+          <img
+            alt={author.username}
+            src={author.profilePicture || <Blockies seed={author.ethAddress.toLowerCase()} />}
+          />
+        }
+      >
+        <Meta title={title} description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />} />
+      </Card>
       <Row>
-        <h2>{title}</h2>
+        <p style={{ fontSize: "1.4rem", marginTop: "32px", marginBottom: "32px" }}>{description}</p>
       </Row>
-      <Row>
-        <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />
-      </Row>
-      <Row>
-        <p>{description}</p>
-      </Row>
-      <Row>
-        <p>Patron&apos;s share: {share}%</p>
-      </Row>
-      <Row>
-        <p>Threshold gains: {threshold}</p>
-      </Row>
-      <Row>
-        <Button onClick={showModal}>Make offer</Button>
-      </Row>
-      {author.id !== me.id && (
-        <Row>
-          <Link to={`/chat/${author.id}`}>
-            <Button>Send message</Button>
+      <Descriptions title="Conditions" bordered column={{ sm: 2 }}>
+        <Descriptions.Item label="Provider's share">{share}%</Descriptions.Item>
+        <Descriptions.Item label="Threshold gains (ETH)">{threshold}</Descriptions.Item>
+      </Descriptions>
+      <Row style={{ marginTop: "32px" }}>
+        <Button onClick={showModal}>Make an offer</Button>
+        {author.objectId !== me.id && (
+          <Link to={`/chat/${author.objectId}`}>
+            <Button>Send a message</Button>
           </Link>
-        </Row>
-      )}
+        )}
+      </Row>
 
       <Modal title="Make an offer" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
         <Col span={24}>

@@ -33,7 +33,7 @@ export default function PostsView() {
 
   useMemo(async () => {
     const posts = await remoteStorage.getPosts(params, page);
-    setPosts(posts);
+    setPosts(JSON.parse(JSON.stringify(posts)));
   }, [params, page]);
 
   console.log(`Posts: ${JSON.stringify(posts)}`);
@@ -104,17 +104,15 @@ export default function PostsView() {
               icon={<PlusCircleOutlined style={{ color: inverseThemeColor, fontSize: 38 }} />}
             ></Button>
           </Link> */}
-          <Row>
+          <Row style={{ marginTop: "16px" }}>
             <Col span={12}>
               <List
                 itemLayout="horizontal"
                 dataSource={posts}
                 renderItem={post => {
-                  const author = post.get("author");
-                  const title = post.get("title");
-                  const description = post.get("description");
+                  const { author, title, description } = post;
                   return (
-                    <Link to={`/posts/${post.id}`}>
+                    <Link to={`/posts/${post.objectId}`}>
                       <List.Item>
                         <List.Item.Meta
                           avatar={
@@ -139,7 +137,7 @@ export default function PostsView() {
                   <Route
                     key={key}
                     exact
-                    path={`/posts/${post.id}`}
+                    path={`/posts/${post.objectId}`}
                     component={() => <PostDetail post={post} />}
                   ></Route>
                 ))}
