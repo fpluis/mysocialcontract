@@ -4,6 +4,7 @@ import { useParams } from "react-router";
 import { useAuthentication, useMessaging } from "../providers";
 import "react-chat-elements/dist/main.css";
 import { ChatList, MessageList, Input, Button, SideBar } from "react-chat-elements";
+import { Row, Col } from "antd";
 
 // import { useThemeSwitcher } from "react-css-theme-switcher";
 
@@ -75,24 +76,25 @@ export default function ChatView() {
     date: new Date(message.createdAt),
   }));
 
-  const addMessage = message => {
-    console.log(`Message added:`, message);
-  };
-
   return (
-    <div className="container">
-      <div className="chat-list">
-        <SideBar center={<ChatList dataSource={chatList} />} />
-      </div>
-      <div className="right-panel">
-        <MessageList className="message-list" lockable={true} downButtonBadge={10} dataSource={messageList} />
+    <Row className="chat-box">
+      <Col span={8}>
+        <SideBar top={<ChatList dataSource={chatList} />} />
+      </Col>
+      <Col span={16}>
+        <MessageList
+          className="message-list"
+          lockable={true}
+          downButtonBadge={10}
+          toBottomHeight={"100%"}
+          dataSource={messageList}
+        />
 
         <Input
           placeholder="Type here to send a message."
           defaultValue=""
           ref={textInputRef}
           multiline={true}
-          // buttonsFloat='left'
           onKeyPress={({ shiftKey, charCode }) => {
             if (charCode === 13) {
               if (shiftKey) {
@@ -107,7 +109,7 @@ export default function ChatView() {
           }}
           rightButtons={<Button text="Send" onClick={() => sendMemoized()()} />}
         />
-      </div>
-    </div>
+      </Col>
+    </Row>
   );
 }

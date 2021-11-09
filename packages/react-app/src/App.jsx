@@ -12,11 +12,14 @@ export default function App() {
   const { currentTheme } = useThemeSwitcher();
 
   return (
-    <div>
-      <Header className="app-bar" style={{ background: currentTheme === "light" ? "white" : "#222222" }}>
+    <div className="root-container">
+      <Header
+        className="app-bar"
+        style={{ height: "76px", background: currentTheme === "light" ? "white" : "#222222" }}
+      >
         <AppBar />
       </Header>
-      <Content style={{ marginLeft: "64px", marginTop: "64px" }}>
+      <Content style={{ height: "100%" }}>
         <Routes />
       </Content>
       <ThemeSwitch />

@@ -3,17 +3,9 @@ button {
   font-family: verdana, ubuntu;
 }
 
-.container {
-  display: flex;
-  flex-direction: row;
-  min-height: 80%;
-  width: 70%;
-  overflow: auto;
-  position: absolute;
-  top: 48px;
-  bottom: 0;
-  left: 0;
-  right: 0;
+.chat-box {
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .chat-list {
@@ -22,19 +14,48 @@ button {
   overflow: auto;
 }
 
-.right-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.rce-sbar {
+  background: none !important;
+  padding: 0 !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.rce-sbar-item {
+  width: 100%;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.rce-citem,
+.rce-container-citem {
+  min-width: 100px !important;
+}
+
+.rce-citem-body {
+  border-bottom: none !important;
+}
+
+.rce-container-clist {
+  width: 100%;
+}
+
+.rce-container-input {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.rce-container-input > textarea {
+  overflow-y: hidden;
 }
 
 .message-list {
   flex: 1;
-  min-width: 140px;
   overflow: auto;
 }
 
 .input-area {
   height: 50px;
   background: red;
+}
+
+.rce-mlist {
+  max-height: calc(100vh - 76px - 45px);
 }

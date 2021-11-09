@@ -1,0 +1,29 @@
+.app-bar-container {
+  text-align: center;
+  min-width: 100%;
+}
+
+.app-bar-container > .ant-col > a {
+  font-weight: normal;
+  font-size: 38px;
+  line-height: 38px;
+  height: 38px;
+  border-width: 0px;
+  vertical-align: middle;
+}
+
+.app-bar-container > .ant-col > a > button {
+  border: none;
+}
+
+.icon {
+  font-size: 38px !important;
+}
+
+.icon .light {
+  color: "#222222";
+}
+
+.icon .dark {
+  color: "white";
+}
