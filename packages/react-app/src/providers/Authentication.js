@@ -27,6 +27,18 @@ export const Authentication = {
       });
   },
 
+  setUserAttribute: async (prop, value, isFile = false) => {
+    console.log(`Set user's ${prop}`);
+    let actualValue = value;
+    if (isFile) {
+      const { file } = value;
+      actualValue = new Moralis.File(file.name, file);
+    }
+
+    Authentication.user.set(prop, actualValue);
+  },
+
+  updateUser: () => Authentication.user.save(),
   logOut: () => {
     return CustomUser.logOut();
   },

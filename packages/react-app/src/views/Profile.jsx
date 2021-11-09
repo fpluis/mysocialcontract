@@ -1,6 +1,6 @@
 import { UploadOutlined } from "@ant-design/icons";
-import { Button, message, Upload } from "antd";
-import React, { useState } from "react";
+import { Button, message, Upload, Col, Row, Form, Input } from "antd";
+import React, { useState, useMemo } from "react";
 import { useAuthentication, useRemoteStorage } from "../providers";
 
 const profilePictureUpload = event => {
@@ -56,7 +56,7 @@ const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "pi
       showUploadList={false}
       beforeUpload={beforeUpload}
       onChange={handleChange}
-      // customRequest={customRequest}
+      customRequest={customRequest}
     >
       {imageUrl ? (
         <img src={imageUrl} alt="avatar" style={{ width: "100%", cursor: "pointer" }} />
@@ -68,11 +68,111 @@ const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "pi
 };
 
 export default function ProfileView() {
-  const { logOut } = useAuthentication();
+  const { user, updateUser, setUserAttribute, logOut } = useAuthentication();
+  const [props, setProps] = useState({});
+
+  useMemo(() => {
+    if (user.authenticated()) {
+      const { username, description, banner, profilePicture } = JSON.parse(JSON.stringify(user));
+      console.log(`Setting props from ${JSON.stringify(user)}`);
+      const props = { username, description };
+      if (banner && banner.url) {
+        props.banner = banner.url;
+      }
+
+      if (profilePicture && profilePicture.url) {
+        props.profilePicture = profilePicture.url;
+      }
+
+      setProps(props);
+    }
+  }, [user.authenticated()]);
+
   return (
     <>
-      <AvatarUpload></AvatarUpload>
-      <Button onClick={() => logOut()}>Log out</Button>
+      <Col span={24}>
+        <Row style={{ margin: "0 30px", textAlign: "left", fontSize: "1.4rem" }}>
+          <Col span={24} style={{ margin: "0 auto" }}>
+            <Form
+              initialValues={{
+                description: props.description,
+                username: props.username,
+              }}
+              style={{ marginTop: 64 }}
+              name="validate_other"
+              labelCol={{ span: 6 }}
+              wrapperCol={{ span: 14 }}
+              onFinish={async formProps => {
+                console.log(`Form props: ${JSON.stringify(formProps)}`);
+                const { username, description } = formProps;
+                if (username.length > 0) {
+                  setUserAttribute("username", username);
+                }
+
+                if (description.length > 0) {
+                  setUserAttribute("description", description);
+                }
+
+                await updateUser();
+                message.success("Profile updated successfully!");
+              }}
+            >
+              <Form.Item label="Banner">
+                <AvatarUpload
+                  initialImage={props.banner}
+                  maxSizeInMB={512}
+                  customRequest={async args => {
+                    setUserAttribute("banner", args, true);
+                  }}
+                />
+              </Form.Item>
+              <Form.Item label="Profile Picture">
+                <Form.Item valuePropName="profilePicture" getValueFromEvent={profilePictureUpload} noStyle>
+                  <AvatarUpload
+                    initialImage={props.profilePicture}
+                    customRequest={async args => {
+                      setUserAttribute("profilePicture", args, true);
+                    }}
+                    maxSizeInMB={4}
+                    listType="picture-card"
+                  />
+                </Form.Item>
+              </Form.Item>
+              <Form.Item name="username" label="Username">
+                <Input />
+              </Form.Item>
+              <Form.Item name="description" label="Description">
+                <Input.TextArea rows={16} />
+              </Form.Item>
+
+              <Form.Item
+                wrapperCol={{
+                  span: 12,
+                  offset: 6,
+                }}
+              >
+                <Button type="primary" htmlType="submit">
+                  Submit
+                </Button>
+              </Form.Item>
+            </Form>
+            <Button
+              style={{ backgroundColor: "#d50000" }}
+              onClick={async () => {
+                await logOut();
+                message.success("Logged out. Redirecting to homepage.");
+                setTimeout(() => {
+                  window.location.replace(new URL(document.URL).origin);
+                }, 1000);
+              }}
+            >
+              Log out
+            </Button>
+          </Col>
+        </Row>
+      </Col>
+      {/* <AvatarUpload></AvatarUpload> */}
+      {/* <Button onClick={() => logOut()}>Log out</Button> */}
     </>
   );
 }
