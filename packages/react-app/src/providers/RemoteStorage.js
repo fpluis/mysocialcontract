@@ -45,11 +45,19 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     const postsWithAuthor = await Promise.all(
       posts.map(async post => {
         const author = await getUser(post.get("authorId"));
-        post.set("author", {
-          id: author.id,
+        console.log(`Author from remote storage: ${JSON.stringify(author)}`);
+        const authorProps = {
+          objectId: author.id,
           username: author.get("username"),
           ethAddress: author.get("ethAddress"),
-        });
+        };
+        const picture = author.get("profilePicture");
+        console.log(`Profile picture: ${JSON.stringify(picture)}; url ${picture.url()}`);
+        if (picture) {
+          authorProps.profilePicture = picture.url();
+        }
+
+        post.set("author", authorProps);
         return post;
       }),
     );

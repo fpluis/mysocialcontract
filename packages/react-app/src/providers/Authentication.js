@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { MORALIS_SERVER_ID, MORALIS_APP_ID } from "../constants";
 import Moralis from "moralis";
 import { CustomUser } from "../classes";
@@ -6,47 +6,47 @@ import { CustomUser } from "../classes";
 Moralis.start({ serverUrl: MORALIS_SERVER_ID, appId: MORALIS_APP_ID });
 Moralis.Object.registerSubclass("_User", CustomUser);
 
-export const Authentication = {
-  user: CustomUser.current() || { authenticated: () => false },
-
-  login: () => {
-    const user = CustomUser.current();
-    if (user) {
-      Authentication.user = user;
-      return user;
-    }
-
-    return Moralis.authenticate({ signingMessage: "Log in using Moralis" })
-      .then(user => {
-        Authentication.user = user;
-        console.log("logged in user:", user);
-        console.log(user.get("ethAddress"));
-      })
-      .catch(error => {
-        console.log(error);
-      });
-  },
-
-  setUserAttribute: async (prop, value, isFile = false) => {
-    console.log(`Set user's ${prop}`);
-    let actualValue = value;
-    if (isFile) {
-      const { file } = value;
-      actualValue = new Moralis.File(file.name, file);
-    }
-
-    Authentication.user.set(prop, actualValue);
-  },
-
-  updateUser: () => Authentication.user.save(),
-  logOut: () => {
-    return CustomUser.logOut();
-  },
-};
-
 const AuthenticationProviderContext = React.createContext({});
 
 export const AuthenticationProvider = ({ children = null }) => {
+  let user = CustomUser.current();
+  const [updatedAt, setUpdatedAt] = useState(user.get("updatedAt") || "");
+  const Authentication = {
+    user,
+    updatedAt,
+
+    login: () => {
+      return Moralis.authenticate({ signingMessage: "Log in using Moralis" })
+        .then(authenticatedUser => {
+          user = authenticatedUser;
+          console.log("Authenticated user:", user);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+
+    setUserAttribute: async (prop, value, isFile = false) => {
+      console.log(`Set user's ${prop}`);
+      let actualValue = value;
+      if (isFile) {
+        const { file } = value;
+        actualValue = new Moralis.File(file.name, file);
+      }
+
+      user.set(prop, actualValue);
+    },
+
+    updateUser: async () => {
+      await user.save().then(user => {
+        setUpdatedAt(user.get("updatedAt"));
+        console.log(`New updated at: ${user.get("updatedAt")}`);
+      });
+    },
+    logOut: () => {
+      return CustomUser.logOut();
+    },
+  };
   return (
     <AuthenticationProviderContext.Provider value={Authentication}>{children}</AuthenticationProviderContext.Provider>
   );

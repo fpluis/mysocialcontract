@@ -37,12 +37,8 @@ const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "pi
   };
 
   const handleChange = info => {
-    if (info.file.status === "uploading") {
-      return;
-    }
-
-    if (info.file.status === "done") {
-      // Get this url from response in real world.
+    console.log(`Change:`, info);
+    if (info.file.originFileObj) {
       getBase64(info.file.originFileObj, imageUrl => {
         setImageUrl(imageUrl);
       });

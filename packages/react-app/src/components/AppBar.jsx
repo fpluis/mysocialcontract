@@ -10,7 +10,10 @@ import "./AppBar.css";
 export default function AppBar() {
   const { user, login } = useAuthentication();
   const { currentTheme } = useThemeSwitcher();
-  const { image: profilePicture = null, ethAddress = "" } = user;
+  const { ethAddress = "" } = user;
+  const pictureObject = user.get("profilePicture");
+  const profilePicture = pictureObject ? pictureObject.url() : null;
+  console.log(`Profile picture ${JSON.stringify(pictureObject)}; user ${JSON.stringify(user)}`);
 
   const backgroundColor = currentTheme === "light" ? "white" : "#222222";
 
