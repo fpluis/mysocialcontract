@@ -14,3 +14,4 @@ export class CustomUser extends Moralis.User {
 export const MessageObject = Moralis.Object.extend("Message");
 export const ChatObject = Moralis.Object.extend("Chat");
 export const PostObject = Moralis.Object.extend("Post");
+export const OfferObject = Moralis.Object.extend("Offer");

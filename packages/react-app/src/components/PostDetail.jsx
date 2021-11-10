@@ -1,43 +1,103 @@
-import { Button, Col, Modal, Row, DatePicker, InputNumber, Card, Avatar, Descriptions } from "antd";
+import { Button, Col, Modal, Row, DatePicker, InputNumber, Card, Descriptions } from "antd";
 import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
-import { useAuthentication, useBlockchain } from "../providers";
+import { useAuthentication, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import { Link } from "react-router-dom";
 import Blockies from "react-blockies";
+import moment from "moment";
 
 const { Meta } = Card;
 const { RangePicker } = DatePicker;
 
+const OfferModal = ({ currentTheme, visible, onOk, onCancel, initialValues: { share: initialShare } }) => {
+  const [share, setShare] = useState(initialShare);
+  const [startDate, setStartDate] = useState(Math.floor(new Date().getTime() / 1000));
+  const [secondsAfter, setSecondsAfter] = useState(120);
+  const [initialDeposit, setInitialDeposit] = useState(0);
+
+  return (
+    <Modal
+      title="Make an offer"
+      visible={visible}
+      onOk={() => onOk({ share, startDate, secondsAfter, initialDeposit })}
+      onCancel={onCancel}
+    >
+      <Col span={24}>
+        <Row>
+          <label className="action-field">
+            <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
+              Contract period
+            </span>
+            <RangePicker
+              defaultValue={[moment(startDate * 1000), moment(startDate * 1000 + secondsAfter * 1000)]}
+              onChange={value => {
+                const [start, end] = value;
+                const startDate = start.unix();
+                setStartDate(startDate);
+                setSecondsAfter(end.unix() - startDate);
+              }}
+            />
+          </label>
+        </Row>
+
+        <Row>
+          <label className="action-field">
+            <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
+              Share
+            </span>
+            <InputNumber
+              onChange={value => {
+                setShare(value);
+              }}
+              defaultValue={share}
+              min={0}
+              max={100}
+              placeholder="Between 0 and 100"
+              style={{ width: "100%" }}
+            />
+          </label>
+        </Row>
+
+        <Row>
+          <label className="action-field">
+            <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
+              Initial deposit
+            </span>
+            <InputNumber
+              onChange={value => {
+                setInitialDeposit(value);
+              }}
+              defaultValue={initialDeposit}
+              placeholder="Minimum ETH the payer has to deposit"
+              style={{ width: "100%" }}
+            />
+          </label>
+        </Row>
+      </Col>
+    </Modal>
+  );
+};
+
 export default function PostDetail({ post }) {
+  const remoteStorage = useRemoteStorage();
   const { user: me } = useAuthentication();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const blockchain = useBlockchain();
   const { currentTheme } = useThemeSwitcher();
 
   const { title, description, createdAt, share, threshold, author } = post;
-  const [mentorCutAsPercentage, setMentorCut] = useState(share);
-  const [startDate, setStartDate] = useState(Math.floor(new Date().getTime() / 1000));
-  const [secondsAfter, setSecondsAfter] = useState(120);
 
   const showModal = () => {
     setIsModalVisible(true);
   };
 
-  const handleOk = async () => {
-    const result = await blockchain.createPromotion({
-      ownerAddress: author.ethAddress,
-      mentorAddress: me.get("ethAddress"),
-      thresholdEth: threshold,
-      startDate,
-      secondsAfter,
-      mentorCutAsPercentage,
-    });
+  const putOffer = async props => {
+    const result = await remoteStorage.putOffer(props);
     console.log(`Result: ${JSON.stringify(result)}`);
     setIsModalVisible(false);
   };
 
-  const handleCancel = () => {
+  const closeModal = () => {
     setIsModalVisible(false);
   };
 
@@ -71,43 +131,13 @@ export default function PostDetail({ post }) {
         )}
       </Row>
 
-      <Modal title="Make an offer" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
-        <Col span={24}>
-          <Row>
-            <label className="action-field">
-              <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
-                Duration
-              </span>
-              <RangePicker
-                onChange={value => {
-                  const [start, end] = value;
-                  const startDate = start.unix();
-                  setStartDate(startDate);
-                  setSecondsAfter(end.unix() - startDate);
-                }}
-              />
-            </label>
-          </Row>
-
-          <Row>
-            <label className="action-field">
-              <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
-                Share
-              </span>
-              <InputNumber
-                onChange={value => {
-                  setMentorCut(value);
-                }}
-                defaultValue={mentorCutAsPercentage}
-                min={0}
-                max={100}
-                placeholder="Between 0 and 100"
-                style={{ width: "100%" }}
-              />
-            </label>
-          </Row>
-        </Col>
-      </Modal>
+      <OfferModal
+        currentTheme={currentTheme}
+        visible={isModalVisible}
+        onOk={putOffer}
+        onCancel={closeModal}
+        initialValues={{ share, threshold }}
+      />
     </Col>
   );
 }

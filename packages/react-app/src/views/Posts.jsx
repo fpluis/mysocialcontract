@@ -1,40 +1,45 @@
 import { Row, Col, List, Avatar, Menu, Input, InputNumber, Button, Form, message } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, Switch, Route } from "react-router-dom";
-import { useRemoteStorage } from "../providers";
+import { useAuthentication, useRemoteStorage } from "../providers";
 import Blockies from "react-blockies";
-import { PostDetail } from "../components";
-import { PlusCircleOutlined } from "@ant-design/icons";
-import { useThemeSwitcher } from "react-css-theme-switcher";
-// import Form from "rc-field-form/es/Form";
+import { PostDetail, PostEdit, PostPrivate } from "../components";
+// import { useThemeSwitcher } from "react-css-theme-switcher";
 
 export default function PostsView() {
+  const { user } = useAuthentication();
   const remoteStorage = useRemoteStorage();
   const [posts, setPosts] = useState([]);
   const [params, setParams] = useState({});
   const [page, setPage] = useState(0);
   const [route, setRoute] = useState("/posts/");
+  const [myPosts, setMyPosts] = useState([]);
 
-  const submit = async props => {
+  const createPost = async props => {
     console.log(`Props: ${JSON.stringify(props)}`);
-    await remoteStorage.putPost(props);
+    const post = await remoteStorage.putPost(props);
     message.success("Post successfully created!");
-    // setTimeout(() => {
-    //   window.location.href = "/posts/";
-    // }, 2000);
+    setPosts([...posts, JSON.parse(JSON.stringify(post))]);
   };
 
   useEffect(() => {
     setRoute(window.location.pathname);
   }, [setRoute]);
 
-  const { currentTheme } = useThemeSwitcher();
-  const inverseThemeColor = currentTheme === "light" ? "#222222" : "white";
+  // const { currentTheme } = useThemeSwitcher();
+  // const inverseThemeColor = currentTheme === "light" ? "#222222" : "white";
 
   useMemo(async () => {
     const posts = await remoteStorage.getPosts(params, page);
     setPosts(JSON.parse(JSON.stringify(posts)));
   }, [params, page]);
+
+  useMemo(async () => {
+    if (route === "/posts/me" && myPosts.length === 0) {
+      const myPosts = await remoteStorage.getPosts(params, page, user.id);
+      setMyPosts(JSON.parse(JSON.stringify(myPosts)));
+    }
+  }, [route]);
 
   console.log(`Posts: ${JSON.stringify(posts)}`);
   return (
@@ -50,6 +55,16 @@ export default function PostsView() {
             All
           </Link>
         </Menu.Item>
+        <Menu.Item key="/posts/me">
+          <Link
+            onClick={() => {
+              setRoute("/posts/me");
+            }}
+            to="/posts/me"
+          >
+            My requests
+          </Link>
+        </Menu.Item>
         <Menu.Item key="/posts/create">
           <Link
             onClick={() => {
@@ -57,45 +72,21 @@ export default function PostsView() {
             }}
             to="/posts/create"
           >
-            Post an offer
+            Post a request
           </Link>
         </Menu.Item>
       </Menu>
 
       <Switch>
-        <Route path="/posts/me">{/* TODO */}</Route>
+        <Route path="/posts/me">
+          <Col span={24}>
+            {myPosts.map((post, key) => (
+              <PostPrivate post={post} key={key} />
+            ))}
+          </Col>
+        </Route>
         <Route path="/posts/create">
-          <Form
-            style={{ marginTop: 64 }}
-            name="validate_other"
-            labelCol={{ span: 6 }}
-            wrapperCol={{ span: 14 }}
-            onFinish={submit}
-          >
-            <Form.Item name="title" label="Title">
-              <Input />
-            </Form.Item>
-            <Form.Item name="description" label="Description">
-              <Input.TextArea rows={16} />
-            </Form.Item>
-            <Form.Item name="share" label="Patron's share">
-              <InputNumber min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item name="threshold" label="Threshold gains">
-              <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              wrapperCol={{
-                span: 12,
-                offset: 6,
-              }}
-            >
-              <Button type="primary" htmlType="submit">
-                Submit
-              </Button>
-            </Form.Item>
-          </Form>
+          <PostEdit onFinish={createPost} />
         </Route>
         <Route path="/posts/:id?">
           {/* <Link to={`/post/create`}>

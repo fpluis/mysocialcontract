@@ -1,7 +1,7 @@
 import Moralis from "moralis";
 import React, { useContext } from "react";
 import { useAuthentication, useLocalStorage } from ".";
-import { CustomUser, PostObject } from "../classes";
+import { CustomUser, OfferObject, PostObject } from "../classes";
 
 const POST_QUERY_LIMIT = 20;
 
@@ -19,6 +19,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       .then(
         post => {
           console.log(`Object saved successfully, result`, post);
+          return post;
         },
         error => {
           console.log(`Error saving object,`, error);
@@ -26,17 +27,35 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       );
   };
 
-  const getUser = id => {
+  const getUser = async id => {
     const query = new Moralis.Query(CustomUser);
-    return query.get(id);
+    const user = await query.get(id);
+    console.log(`User from remote storage: ${JSON.stringify(user)}`);
+    const props = {
+      objectId: user.id,
+      username: user.get("username"),
+      ethAddress: user.get("ethAddress"),
+    };
+    const picture = user.get("profilePicture");
+    console.log(`Get user ${id}`);
+    console.log(`Profile picture: ${JSON.stringify(picture)}`);
+    if (picture) {
+      props.profilePicture = picture.url();
+    }
+
+    return props;
   };
 
-  const getPosts = async (params = {}, page = 0) => {
+  const getPosts = async (params = {}, page = 0, authorId = null) => {
     console.log(`Get posts for page ${page} with params ${JSON.stringify(params)}`);
     const query = new Moralis.Query(PostObject);
     query.limit(POST_QUERY_LIMIT);
     if (page > 0) {
       query.skip(page * POST_QUERY_LIMIT);
+    }
+
+    if (authorId != null) {
+      query.equalTo("authorId", authorId);
     }
 
     query.ascending("createdAt");
@@ -45,19 +64,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     const postsWithAuthor = await Promise.all(
       posts.map(async post => {
         const author = await getUser(post.get("authorId"));
-        console.log(`Author from remote storage: ${JSON.stringify(author)}`);
-        const authorProps = {
-          objectId: author.id,
-          username: author.get("username"),
-          ethAddress: author.get("ethAddress"),
-        };
-        const picture = author.get("profilePicture");
-        console.log(`Profile picture: ${JSON.stringify(picture)}; url ${picture.url()}`);
-        if (picture) {
-          authorProps.profilePicture = picture.url();
-        }
-
-        post.set("author", authorProps);
+        post.set("author", author);
         return post;
       }),
     );
@@ -81,11 +88,64 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     return query.first();
   };
 
+  const putOffer = async ({ share, startDate, secondsAfter, initialDeposit }) => {
+    const offer = new OfferObject();
+    return offer
+      .save({
+        share,
+        startDate,
+        secondsAfter,
+        initialDeposit,
+        authorId: Authentication.user.id,
+      })
+      .then(
+        offer => {
+          console.log(`Object saved successfully, result`, offer);
+          return offer;
+        },
+        error => {
+          console.log(`Error saving object,`, error);
+        },
+      );
+  };
+
+  const getOffers = async ({ postId, authorId }) => {
+    console.log(`Get offers with params postId=${postId}, authorId=${authorId}`);
+    const query = new Moralis.Query(OfferObject);
+    query.ascending("createdAt");
+    if (postId) {
+      query.equalTo("postId", postId);
+    }
+
+    if (authorId) {
+      query.equalTo("authorId", authorId);
+    }
+
+    const offers = await query.find();
+    console.log(`Offers: ${JSON.stringify(offers)}`);
+    const offersWithAuthor = await Promise.all(
+      offers.map(async offer => {
+        const author = await getUser(offer.get("authorId"));
+        offer.set("author", author);
+        return offer;
+      }),
+    );
+    console.log(`Offers with author ${JSON.stringify(offersWithAuthor)}`);
+    offersWithAuthor.forEach(offer => {
+      const value = JSON.stringify(offer);
+      console.log(`Serializing offer ${value}`);
+      LocalStorage.setItem(value.objectId, value);
+    });
+    return offersWithAuthor;
+  };
+
   return {
     putPost,
     getUser,
     getPosts,
     getPost,
+    putOffer,
+    getOffers,
   };
 };
 
