@@ -9,6 +9,9 @@ export const Routes = () => {
       <Route exact path="/profile/" component={() => <ProfileView />} />
       <Route path="/chat/:id?" component={() => <ChatView />} />
       <Route path="/posts/" component={() => <PostsView />} />
+      <Route path="/me/requests/" component={() => <PostsView />} />
+      <Route path="/me/offers/" component={() => <PostsView />} />
+      <Route path="/me/contracts/" component={() => <PostsView />} />
     </Switch>
   );
 };

@@ -3,43 +3,70 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, Switch, Route } from "react-router-dom";
 import { useAuthentication, useRemoteStorage } from "../providers";
 import Blockies from "react-blockies";
-import { PostDetail, PostEdit, PostPrivate } from "../components";
+import { PostDetail, MyRequests, PostEditorModal, OfferList, Description } from "../components";
+import { PlusCircleOutlined } from "@ant-design/icons";
+import ReactTimeAgo from "react-time-ago";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
 
 export default function PostsView() {
   const { user } = useAuthentication();
   const remoteStorage = useRemoteStorage();
+  const [isPostModalVisible, setCreatePostModalVisible] = useState(false);
   const [posts, setPosts] = useState([]);
   const [params, setParams] = useState({});
   const [page, setPage] = useState(0);
   const [route, setRoute] = useState("/posts/");
-  const [myPosts, setMyPosts] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
+  const [myOffers, setMyOffers] = useState([]);
 
   const createPost = async props => {
     console.log(`Props: ${JSON.stringify(props)}`);
     const post = await remoteStorage.putPost(props);
     message.success("Post successfully created!");
-    setPosts([...posts, JSON.parse(JSON.stringify(post))]);
+    setPosts([...posts, post.toJSON()]);
   };
 
   useEffect(() => {
-    setRoute(window.location.pathname);
-  }, [setRoute]);
+    console.log(`Window route ${window.location.hash.replace(/^#/, "")}`);
+    setRoute(window.location.hash.replace(/^#/, ""));
+  }, [setRoute, window.location.hash]);
 
   // const { currentTheme } = useThemeSwitcher();
   // const inverseThemeColor = currentTheme === "light" ? "#222222" : "white";
 
   useMemo(async () => {
     const posts = await remoteStorage.getPosts(params, page);
-    setPosts(JSON.parse(JSON.stringify(posts)));
+    setPosts(posts.map(post => post.toJSON()));
   }, [params, page]);
 
   useMemo(async () => {
-    if (route === "/posts/me" && myPosts.length === 0) {
+    console.log(`Route: ${route}`);
+    if (route === "/me/requests" && myRequests.length === 0) {
       const myPosts = await remoteStorage.getPosts(params, page, user.id);
-      setMyPosts(JSON.parse(JSON.stringify(myPosts)));
+      const offers = await remoteStorage.getOffers({ postIds: myPosts.map(({ objectId }) => objectId) });
+      const withOffers = myPosts.map(post => {
+        const { objectId: postId } = post;
+        const postOffers = offers
+          .filter(({ postId: offerPostId }) => offerPostId === postId)
+          .map(offer => offer.toJSON());
+        console.log(`Post offers: ${JSON.stringify(postOffers)}`);
+        post.set("offers", postOffers);
+        return post;
+      });
+      setMyRequests(withOffers.map(post => post.toJSON()));
+    }
+
+    if (route === "/me/offers" && myOffers.length === 0) {
+      const offers = await remoteStorage.getOffers({ authorId: user.id });
+      setMyOffers(offers.map(post => post.toJSON()));
+      console.log(`My (${user.id}) offers: ${JSON.stringify(offers.map(post => post.toJSON()))}`);
     }
   }, [route]);
+
+  const rejectOffer = offer => {
+    // TODO
+    console.log(`Offer ${JSON.stringify(offer)} rejected`);
+  };
 
   console.log(`Posts: ${JSON.stringify(posts)}`);
   return (
@@ -55,53 +82,77 @@ export default function PostsView() {
             All
           </Link>
         </Menu.Item>
-        <Menu.Item key="/posts/me">
+        <Menu.Item key="/me/requests">
           <Link
             onClick={() => {
-              setRoute("/posts/me");
+              setRoute("/me/requests");
             }}
-            to="/posts/me"
+            to="/me/requests"
           >
             My requests
           </Link>
         </Menu.Item>
-        <Menu.Item key="/posts/create">
+        <Menu.Item key="/me/offers">
           <Link
             onClick={() => {
-              setRoute("/posts/create");
+              setRoute("/me/offers");
             }}
-            to="/posts/create"
+            to="/me/offers"
           >
-            Post a request
+            Offers I have made
           </Link>
         </Menu.Item>
+        <Menu.Item key="/me/contracts">
+          <Link
+            onClick={() => {
+              setRoute("/me/contracts");
+            }}
+            to="/me/contracts"
+          >
+            My contracts
+          </Link>
+        </Menu.Item>
+        <Button
+          icon={<PlusCircleOutlined style={{ fontSize: "22px" }} />}
+          onClick={() => setCreatePostModalVisible(true)}
+          style={{ border: "none", verticalAlign: "middle" }}
+        />
       </Menu>
 
+      <PostEditorModal
+        visible={isPostModalVisible}
+        title="Create a new post"
+        onCancel={() => setCreatePostModalVisible(false)}
+        onFinish={async props => {
+          await createPost(props);
+          setCreatePostModalVisible(false);
+        }}
+      />
+
       <Switch>
-        <Route path="/posts/me">
+        <Route path="/me/requests">
           <Col span={24}>
-            {myPosts.map((post, key) => (
-              <PostPrivate post={post} key={key} />
-            ))}
+            <MyRequests posts={myRequests} />
           </Col>
         </Route>
-        <Route path="/posts/create">
-          <PostEdit onFinish={createPost} />
+        <Route path="/me/offers">
+          <Col span={24}>
+            <OfferList offers={myOffers} onRejectOffer={rejectOffer} />
+          </Col>
+        </Route>
+        <Route path="/me/contracts">
+          <Col span={24}>
+            <List>{/* TODO */}</List>
+          </Col>
         </Route>
         <Route path="/posts/:id?">
-          {/* <Link to={`/post/create`}>
-            <Button
-              style={{ border: "none" }}
-              icon={<PlusCircleOutlined style={{ color: inverseThemeColor, fontSize: 38 }} />}
-            ></Button>
-          </Link> */}
           <Row style={{ marginTop: "16px" }}>
             <Col span={12}>
               <List
                 itemLayout="horizontal"
                 dataSource={posts}
                 renderItem={post => {
-                  const { author, title, description } = post;
+                  const { author, title, createdAt } = post;
                   return (
                     <Link to={`/posts/${post.objectId}`}>
                       <List.Item>
@@ -114,7 +165,13 @@ export default function PostsView() {
                             ></Avatar>
                           }
                           title={title}
-                          description={description}
+                          description={
+                            <>
+                              {createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
+                              {/* {" by "}
+                              <b>{author.username}</b> */}
+                            </>
+                          }
                         />
                       </List.Item>
                     </Link>

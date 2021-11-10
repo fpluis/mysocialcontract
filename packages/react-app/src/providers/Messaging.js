@@ -25,7 +25,7 @@ const loadChats = async userId => {
   console.log(`Chats: ${JSON.stringify(chats)}`);
   return Promise.all(
     chats.map(async chat => {
-      const object = JSON.parse(JSON.stringify(chat));
+      const object = chat.toJSON();
       const { participants } = object;
       const [otherId] = participants.filter(participant => participant !== userId);
       // console.log(`Participants in chat ${object.objectId}: ${JSON.stringify(participants)}`);
@@ -66,7 +66,7 @@ export const MessagingProvider = ({ children = null }) => {
 
   const addMessages = (chatId, messages) => {
     const current = messageMap[chatId] == null ? [] : messageMap[chatId];
-    const parsed = messages.map(message => JSON.parse(JSON.stringify(message)));
+    const parsed = messages.map(message => message.toJSON());
     setMessageMap({ ...messageMap, [chatId]: current.concat(parsed) });
   };
 

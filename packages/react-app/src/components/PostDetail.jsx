@@ -1,8 +1,9 @@
-import { Button, Col, Modal, Row, DatePicker, InputNumber, Card, Descriptions } from "antd";
+import { Button, Col, Modal, Row, DatePicker, InputNumber, Card, Descriptions, Avatar } from "antd";
 import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
+import { Description } from "./index";
 import { Link } from "react-router-dom";
 import Blockies from "react-blockies";
 import moment from "moment";
@@ -103,33 +104,42 @@ export default function PostDetail({ post }) {
 
   return (
     <Col span={24}>
-      <Card
-        size="large"
-        style={{ width: 300 }}
-        cover={
-          <img
-            alt={author.username}
-            src={author.profilePicture || <Blockies seed={author.ethAddress.toLowerCase()} />}
-          />
-        }
-      >
-        <Meta title={title} description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />} />
+      <h1>{title}</h1>
+      {/* <h4>
+        From {author.username}
+        {createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
+      </h4> */}
+      <Card size="small">
+        <Meta
+          avatar={
+            <Avatar
+              className={`icon ${currentTheme}`}
+              size={38}
+              alt={author.username}
+              src={author.profilePicture || <Blockies size={38} seed={author.ethAddress.toLowerCase()} />}
+            ></Avatar>
+          }
+          title={author.username}
+          description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
+        />
       </Card>
       <Row>
-        <p style={{ fontSize: "1.4rem", marginTop: "32px", marginBottom: "32px" }}>{description}</p>
+        <p style={{ fontSize: "1.4rem", marginTop: "32px", marginBottom: "32px" }}>
+          <Description text={description} />
+        </p>
       </Row>
-      <Descriptions title="Conditions" bordered column={{ sm: 2 }}>
-        <Descriptions.Item label="Provider's share">{share}%</Descriptions.Item>
+      <Descriptions title="Conditions" bordered column={1}>
+        <Descriptions.Item label="Provider's share">{`${share}%`}</Descriptions.Item>
         <Descriptions.Item label="Threshold gains (ETH)">{threshold}</Descriptions.Item>
       </Descriptions>
-      <Row style={{ marginTop: "32px" }}>
-        <Button onClick={showModal}>Make an offer</Button>
-        {author.objectId !== me.id && (
+      {author.objectId !== me.id && (
+        <Row style={{ marginTop: "32px" }}>
+          <Button onClick={showModal}>Make an offer</Button>
           <Link to={`/chat/${author.objectId}`}>
             <Button>Send a message</Button>
           </Link>
-        )}
-      </Row>
+        </Row>
+      )}
 
       <OfferModal
         currentTheme={currentTheme}

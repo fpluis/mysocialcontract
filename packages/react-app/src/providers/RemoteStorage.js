@@ -109,12 +109,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       );
   };
 
-  const getOffers = async ({ postId, authorId }) => {
-    console.log(`Get offers with params postId=${postId}, authorId=${authorId}`);
+  const getOffers = async ({ postIds, authorId }) => {
+    console.log(`Get offers with params postIds=${postIds}, authorId=${authorId}`);
     const query = new Moralis.Query(OfferObject);
     query.ascending("createdAt");
-    if (postId) {
-      query.equalTo("postId", postId);
+    if (postIds) {
+      query.containedIn("postId", postIds);
     }
 
     if (authorId) {
