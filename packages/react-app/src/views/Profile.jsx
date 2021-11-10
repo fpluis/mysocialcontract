@@ -69,12 +69,9 @@ export default function ProfileView() {
 
   useMemo(() => {
     if (user.authenticated()) {
-      const { username, description, banner, profilePicture } = JSON.parse(JSON.stringify(user));
+      const { username, description, profilePicture } = user.toJSON();
       console.log(`Setting props from ${JSON.stringify(user)}`);
       const props = { username, description };
-      if (banner && banner.url) {
-        props.banner = banner.url;
-      }
 
       if (profilePicture && profilePicture.url) {
         props.profilePicture = profilePicture.url;
@@ -113,15 +110,6 @@ export default function ProfileView() {
                 message.success("Profile updated successfully!");
               }}
             >
-              <Form.Item label="Banner">
-                <AvatarUpload
-                  initialImage={props.banner}
-                  maxSizeInMB={512}
-                  customRequest={async args => {
-                    setUserAttribute("banner", args, true);
-                  }}
-                />
-              </Form.Item>
               <Form.Item label="Profile Picture">
                 <Form.Item valuePropName="profilePicture" getValueFromEvent={profilePictureUpload} noStyle>
                   <AvatarUpload
@@ -167,8 +155,6 @@ export default function ProfileView() {
           </Col>
         </Row>
       </Col>
-      {/* <AvatarUpload></AvatarUpload> */}
-      {/* <Button onClick={() => logOut()}>Log out</Button> */}
     </>
   );
 }
