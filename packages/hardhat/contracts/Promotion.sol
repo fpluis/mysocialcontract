@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity >=0.6.0;
+pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
@@ -39,8 +39,10 @@ contract Promotion is ChainlinkClient {
         uint256 _ytMinSubscriberCount
     ) public {
         setPublicChainlinkToken();
-        oracle = 0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518;
+        // oracle = 0x22217862db8312c7aEA9150a52662E74756bc744;
         jobId = "7ab68903a4bd49168f67a1bdb727c1f0";
+        setChainlinkToken(0xa36085F69e2889c224210F603D836748e7dC0088);
+        setChainlinkOracle(0x22217862db8312c7aEA9150a52662E74756bc744);
         fee = 0.1 * 10**18;
 
         owner = _owner;
@@ -103,30 +105,25 @@ contract Promotion is ChainlinkClient {
         );
         // require(block.timestamp > endDate, "Deadline has not passed yet.");
 
-        // Chainlink.Request memory request = buildChainlinkRequest(
-        //     "7ab68903a4bd49168f67a1bdb727c1f0",
-        //     address(this),
-        //     this.fulfill.selector
-        // );
-
-        // request.add("ytChannelId", "UCfpnY5NnBl-8L7SvICuYkYQ");
-        // sendChainlinkRequestTo(
-        //     0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518,
-        //     request,
-        //     0.1 * 10**18
-        // );
-        setPublicChainlinkToken();
         Chainlink.Request memory req = buildChainlinkRequest(
-            stringToBytes32("7ab68903a4bd49168f67a1bdb727c1f0"),
+            "7ab68903a4bd49168f67a1bdb727c1f0",
             address(this),
             this.fulfill.selector
         );
         req.add("ytChannelId", "UCfpnY5NnBl-8L7SvICuYkYQ");
-        sendChainlinkRequestTo(
-            0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518,
-            req,
-            1 * LINK_DIVISIBILITY
-        );
+        requestOracleData(req, 1 * LINK_DIVISIBILITY);
+        // setPublicChainlinkToken();
+        // Chainlink.Request memory req = buildChainlinkRequest(
+        //     stringToBytes32("7ab68903a4bd49168f67a1bdb727c1f0"),
+        //     address(this),
+        //     this.fulfill.selector
+        // );
+        // req.add("ytChannelId", "UCfpnY5NnBl-8L7SvICuYkYQ");
+        // sendChainlinkRequestTo(
+        //     0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518,
+        //     req,
+        //     1 * LINK_DIVISIBILITY
+        // );
     }
 
     function fulfill(
