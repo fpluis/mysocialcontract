@@ -1,9 +1,9 @@
-import { Row, Col, List, Avatar, Menu, Input, InputNumber, Button, Form, message } from "antd";
+import { Row, Col, List, Avatar, Menu, Button, message, Divider } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, Switch, Route } from "react-router-dom";
 import { useAuthentication, useRemoteStorage } from "../providers";
 import Blockies from "react-blockies";
-import { PostDetail, MyRequests, PostEditorModal, OfferList, Description } from "../components";
+import { PostDetail, MyRequests, PostEditorModal, OfferList, ContractList } from "../components";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import ReactTimeAgo from "react-time-ago";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
@@ -18,6 +18,8 @@ export default function PostsView() {
   const [route, setRoute] = useState("/posts/");
   const [myRequests, setMyRequests] = useState([]);
   const [myOffers, setMyOffers] = useState([]);
+  const [contractsIOwn, setContractsIOwn] = useState([]);
+  const [contractsIProvide, setContractsIProvide] = useState([]);
 
   const createPost = async props => {
     console.log(`Props: ${JSON.stringify(props)}`);
@@ -36,7 +38,7 @@ export default function PostsView() {
 
   useMemo(async () => {
     const posts = await remoteStorage.getPosts(params, page);
-    setPosts(posts.map(post => post.toJSON()));
+    setPosts(posts);
   }, [params, page]);
 
   useMemo(async () => {
@@ -44,28 +46,41 @@ export default function PostsView() {
     if (route === "/me/requests" && myRequests.length === 0) {
       const myPosts = await remoteStorage.getPosts(params, page, user.id);
       const offers = await remoteStorage.getOffers({ postIds: myPosts.map(({ objectId }) => objectId) });
+      console.log(`All offers found for posts ${JSON.stringify(myPosts)}: ${JSON.stringify(offers)}`);
       const withOffers = myPosts.map(post => {
         const { objectId: postId } = post;
-        const postOffers = offers
-          .filter(({ postId: offerPostId }) => offerPostId === postId)
-          .map(offer => offer.toJSON());
+        const postOffers = offers.filter(({ postId: offerPostId }) => offerPostId === postId);
         console.log(`Post offers: ${JSON.stringify(postOffers)}`);
-        post.set("offers", postOffers);
+        post.offers = postOffers;
         return post;
       });
-      setMyRequests(withOffers.map(post => post.toJSON()));
+      setMyRequests(withOffers);
     }
 
     if (route === "/me/offers" && myOffers.length === 0) {
       const offers = await remoteStorage.getOffers({ authorId: user.id });
-      setMyOffers(offers.map(post => post.toJSON()));
+      setMyOffers(offers);
       console.log(`My (${user.id}) offers: ${JSON.stringify(offers.map(post => post.toJSON()))}`);
     }
-  }, [route]);
 
-  const rejectOffer = offer => {
-    // TODO
-    console.log(`Offer ${JSON.stringify(offer)} rejected`);
+    if (route === "/me/contracts" && remoteStorage.web3Ready && contractsIOwn.length === 0) {
+      const contractsIOwn = await remoteStorage.getContracts({ ownerId: user.id });
+      setContractsIOwn(contractsIOwn.map(contract => contract.toJSON()));
+      console.log(`Contracts I (${user.id}) own: ${JSON.stringify(contractsIOwn.map(contract => contract.toJSON()))}`);
+    }
+
+    if (route === "/me/contracts" && remoteStorage.web3Ready && contractsIProvide.length === 0) {
+      const contractsIProvide = await remoteStorage.getContracts({ providerId: user.id });
+      setContractsIProvide(contractsIProvide.map(contract => contract.toJSON()));
+      console.log(
+        `Contracts I (${user.id}) provider: ${JSON.stringify(contractsIOwn.map(contract => contract.toJSON()))}`,
+      );
+    }
+  }, [route, remoteStorage.web3Ready]);
+
+  const rejectOffer = async offer => {
+    const result = await remoteStorage.setOfferStatus(offer.objectId, "rejected");
+    console.log(`Offer ${JSON.stringify(offer)} rejected:`, result);
   };
 
   console.log(`Posts: ${JSON.stringify(posts)}`);
@@ -123,7 +138,7 @@ export default function PostsView() {
         visible={isPostModalVisible}
         title="Create a new post"
         onCancel={() => setCreatePostModalVisible(false)}
-        onFinish={async props => {
+        onOk={async props => {
           await createPost(props);
           setCreatePostModalVisible(false);
         }}
@@ -142,7 +157,11 @@ export default function PostsView() {
         </Route>
         <Route path="/me/contracts">
           <Col span={24}>
-            <List>{/* TODO */}</List>
+            <h1>Contracts I created</h1>
+            <ContractList contracts={contractsIOwn} />
+            <Divider type="horizontal" />
+            <h1>Contracts where I provide</h1>
+            <ContractList contracts={contractsIProvide} />
           </Col>
         </Route>
         <Route path="/posts/:id?">

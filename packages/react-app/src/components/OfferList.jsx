@@ -5,10 +5,11 @@ import moment from "moment";
 import ReactTimeAgo from "react-time-ago";
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import "./OfferList.css";
+import Conditions from "./Conditions";
 
 const { RangePicker } = DatePicker;
 
-export default function OfferList({ offers = [], onRejectOffer, onComposeContract }) {
+export default function OfferList({ offers = [], post, onRejectOffer, onComposeContract }) {
   console.log(`Render offer list with offers ${JSON.stringify(offers)}`);
   return (
     <List
@@ -18,7 +19,7 @@ export default function OfferList({ offers = [], onRejectOffer, onComposeContrac
       className="offer-list"
     >
       {offers.map((offer, key) => {
-        const { author: contractor, createdAt, share, deposit, startDate, secondsAfter } = offer;
+        const { author: contractor, createdAt, share, deposit, startDate, endDate } = offer;
         const actions = [
           <Tooltip key="reject" position="top" text="Reject offer">
             <Button
@@ -35,7 +36,7 @@ export default function OfferList({ offers = [], onRejectOffer, onComposeContrac
               <Button
                 icon={<FormOutlined />}
                 onClick={() => {
-                  onComposeContract(offer);
+                  onComposeContract(post, offer);
                 }}
               />
             </Tooltip>,
@@ -55,18 +56,16 @@ export default function OfferList({ offers = [], onRejectOffer, onComposeContrac
               title={contractor.username}
               description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
             />
-            <Descriptions title={null} bordered layout="horizontal" column={1}>
+            {/* <Descriptions title={null} bordered layout="horizontal" column={1}>
               {share && <Descriptions.Item label="Share">{share}%</Descriptions.Item>}
               {deposit && <Descriptions.Item label="Initial deposit">{deposit}</Descriptions.Item>}
-              {startDate && secondsAfter && (
+              {startDate && endDate && (
                 <Descriptions.Item label="Period">
-                  <RangePicker
-                    defaultValue={[moment(startDate * 1000), moment(startDate * 1000 + secondsAfter * 1000)]}
-                    disabled
-                  />
+                  <RangePicker defaultValue={[moment(startDate), moment(endDate)]} disabled />
                 </Descriptions.Item>
               )}
-            </Descriptions>
+            </Descriptions> */}
+            <Conditions title={null} layout="horizontal" conditions={offer} />
           </List.Item>
         );
       })}

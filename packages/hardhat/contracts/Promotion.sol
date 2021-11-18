@@ -2,51 +2,154 @@
 
 pragma solidity >=0.6.0;
 
-contract Promotion {
-    uint256 public threshold;
-    uint256 public balance;
-    uint256 public deadline;
-    uint256 public mentorCut;
-    address public mentor;
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+
+contract Promotion is ChainlinkClient {
+    using Chainlink for Chainlink.Request;
+
+    event OnFulfill(uint256 _ytViews, uint256 _ytSubs);
+
+    address private oracle;
+    bytes32 private jobId;
+    uint256 private fee;
+
+    uint256 public thresholdETH;
+    uint256 public startDate;
+    uint256 public endDate;
+    uint256 public share;
+    uint256 public ytViews;
+    uint256 public ytSubs;
+    uint256 public ytMinViewCount;
+    uint256 public ytMinSubscriberCount;
+    address public provider;
     address public owner;
-    bool private hasMentorWithdrawn;
+    string public ytChannelId;
+    bool public isSuccessful;
+    bool private isProviderPaid;
 
     function initialize(
-        address ownerAddress,
-        address mentorAddress,
-        uint256 thresholdEth,
-        uint256 startDate,
-        uint256 secondsAfter,
-        uint256 mentorCutAsPercentage
+        address _owner,
+        address _provider,
+        uint256 _thresholdETH,
+        uint256 _startDate,
+        uint256 _endDate,
+        uint256 _share,
+        string calldata _ytChannelId,
+        uint256 _ytMinViewCount,
+        uint256 _ytMinSubscriberCount
     ) public {
-        owner = ownerAddress;
-        mentor = mentorAddress;
-        threshold = thresholdEth;
-        deadline = startDate + secondsAfter * 1 seconds;
-        mentorCut = mentorCutAsPercentage;
-        hasMentorWithdrawn = false;
+        setPublicChainlinkToken();
+        oracle = 0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518;
+        jobId = "7ab68903a4bd49168f67a1bdb727c1f0";
+        fee = 0.1 * 10**18;
+
+        owner = _owner;
+        provider = _provider;
+        thresholdETH = _thresholdETH;
+        startDate = _startDate;
+        endDate = _endDate * 1 seconds;
+        share = _share;
+        isProviderPaid = false;
+        isSuccessful = false;
+        ytChannelId = _ytChannelId;
+        ytViews = 0;
+        ytSubs = 0;
+        ytMinViewCount = _ytMinViewCount;
+        ytMinSubscriberCount = _ytMinSubscriberCount;
     }
 
-    function deposit() external payable {
-        balance += msg.value;
-    }
+    receive() external payable {}
 
     function withdraw() external {
         require(
-            msg.sender == mentor || msg.sender == owner,
-            "Only owner and mentor can access the funds"
+            msg.sender == provider || msg.sender == owner,
+            "Only owner and provider can access the funds"
         );
         require(
-            msg.sender == owner || hasMentorWithdrawn == false,
-            "Mentor has already withdrawn his cut."
+            msg.sender == owner || isProviderPaid == false,
+            "Provider has already withdrawn their cut."
         );
-        require(block.timestamp > deadline, "Deadline has not passed yet.");
-        require(balance > threshold, "Not enough funds have been deposited");
-        uint256 amount = balance * (mentorCut / 100);
+        require(block.timestamp > endDate, "Deadline has not passed yet.");
+        uint256 balance = address(this).balance;
+        require(balance > thresholdETH, "Not enough funds have been deposited");
+        uint256 amount = balance * (share / 100);
         payable(msg.sender).transfer(amount);
         balance = balance - amount;
-        if (msg.sender == mentor) {
-            hasMentorWithdrawn = true;
+        if (msg.sender == provider) {
+            isProviderPaid = true;
         }
+    }
+
+    function stringToBytes32(string memory source)
+        private
+        pure
+        returns (bytes32 result)
+    {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            // solhint-disable-line no-inline-assembly
+            result := mload(add(source, 32))
+        }
+    }
+
+    function checkConditions() external {
+        require(
+            msg.sender == provider || msg.sender == owner,
+            "Only owner and provider can make this check"
+        );
+        // require(block.timestamp > endDate, "Deadline has not passed yet.");
+
+        // Chainlink.Request memory request = buildChainlinkRequest(
+        //     "7ab68903a4bd49168f67a1bdb727c1f0",
+        //     address(this),
+        //     this.fulfill.selector
+        // );
+
+        // request.add("ytChannelId", "UCfpnY5NnBl-8L7SvICuYkYQ");
+        // sendChainlinkRequestTo(
+        //     0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518,
+        //     request,
+        //     0.1 * 10**18
+        // );
+        setPublicChainlinkToken();
+        Chainlink.Request memory req = buildChainlinkRequest(
+            stringToBytes32("7ab68903a4bd49168f67a1bdb727c1f0"),
+            address(this),
+            this.fulfill.selector
+        );
+        req.add("ytChannelId", "UCfpnY5NnBl-8L7SvICuYkYQ");
+        sendChainlinkRequestTo(
+            0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518,
+            req,
+            1 * LINK_DIVISIBILITY
+        );
+    }
+
+    function fulfill(
+        bytes32 _requestId,
+        uint256 _ytViews,
+        uint256 _ytSubs
+    ) public recordChainlinkFulfillment(_requestId) {
+        emit OnFulfill(_ytViews, _ytSubs);
+        ytViews = _ytViews;
+        ytSubs = _ytSubs;
+    }
+
+    function checkIsSuccessful() external returns (bool allChecksPass) {
+        allChecksPass = true;
+        if (ytMinViewCount > 0 && ytViews < ytMinViewCount) {
+            allChecksPass = false;
+        }
+
+        if (ytMinSubscriberCount > 0 && ytSubs < ytMinSubscriberCount) {
+            allChecksPass = false;
+        }
+
+        isSuccessful = allChecksPass;
+        return allChecksPass;
     }
 }

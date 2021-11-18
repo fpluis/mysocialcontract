@@ -1,82 +1,37 @@
-import { List, Button, Col, Modal, Row, DatePicker, InputNumber, Avatar, Space } from "antd";
+import { List, Button, Descriptions, Modal, Row, DatePicker, InputNumber, Avatar, Space, message } from "antd";
 import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useBlockchain, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import Blockies from "react-blockies";
-import { OfferList, PostEditorModal } from "./index";
-import moment from "moment";
+import { OfferList, PostEditorModal, Description, Conditions } from "./index";
 import { CloseOutlined, EditOutlined } from "@ant-design/icons";
-import Description from "./Description";
+import moment from "moment";
 
-const { RangePicker } = DatePicker;
-
-const ContractModal = ({ visible, offer, onOk, onCancel }) => {
-  const { currentTheme } = useThemeSwitcher();
-  const [share, setShare] = useState(offer.share);
-  const [startDate, setStartDate] = useState(offer.startDate);
-  const [secondsAfter, setSecondsAfter] = useState(offer.secondsAfter);
-  const [initialDeposit, setInitialDeposit] = useState(offer.initialDeposit);
-
+const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
+  const { ytChannelId } = post;
   return (
-    <Modal
-      title="Make an offer"
-      visible={visible}
-      onOk={() => onOk({ share, startDate, secondsAfter, initialDeposit })}
-      onCancel={onCancel}
-    >
-      <Col span={24}>
-        <Row>
-          <label className="action-field">
-            <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
-              Contract period
-            </span>
-            <RangePicker
-              defaultValue={[moment(startDate * 1000), moment(startDate * 1000 + secondsAfter * 1000)]}
-              onChange={value => {
-                const [start, end] = value;
-                const startDate = start.unix();
-                setStartDate(startDate);
-                setSecondsAfter(end.unix() - startDate);
-              }}
-            />
-          </label>
-        </Row>
-
-        <Row>
-          <label className="action-field">
-            <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
-              Contractor&apos;s share
-            </span>
-            <InputNumber
-              onChange={value => {
-                setShare(value);
-              }}
-              defaultValue={share}
-              min={0}
-              max={100}
-              placeholder="Between 0 and 100"
-              style={{ width: "100%" }}
-            />
-          </label>
-        </Row>
-
-        <Row>
-          <label className="action-field">
-            <span className="field-title" style={{ color: currentTheme === "light" ? "#222222" : "#ddd" }}>
-              Initial deposit
-            </span>
-            <InputNumber
-              onChange={value => {
-                setInitialDeposit(value);
-              }}
-              defaultValue={share}
-              placeholder="Minimum ETH the payer has to deposit"
-              style={{ width: "100%" }}
-            />
-          </label>
-        </Row>
-      </Col>
+    <Modal title={title} visible={visible} onOk={onOk} onCancel={onCancel}>
+      {/* <Descriptions title={null} bordered layout="vertical" column={1}>
+        {initialDeposit && <Descriptions.Item label="Initial deposit">{initialDeposit} ETH</Descriptions.Item>}
+        {thresholdETH && <Descriptions.Item label="Threshold ETH">{thresholdETH} ETH</Descriptions.Item>}
+        {share && <Descriptions.Item label="Share">{share}%</Descriptions.Item>}
+        {startDate && endDate && (
+          <Descriptions.Item label="Period">
+            <RangePicker defaultValue={[moment(startDate), moment(endDate)]} disabled />
+          </Descriptions.Item>
+        )}
+        {ytChannelId && (
+          <Descriptions.Item label="Youtube Channel Id">
+            {ytChannelId} (<a href={`https://www.youtube.com/channel/${ytChannelId}`}>Link to the channel</a>)
+          </Descriptions.Item>
+        )}
+        {ytMinViewCount && <Descriptions.Item label="Youtube Min Views">{ytMinViewCount} views</Descriptions.Item>}
+        {ytMinSubscriberCount && (
+          <Descriptions.Item label="Youtube Min Subscribers">{ytMinSubscriberCount} subscribers</Descriptions.Item>
+        )}
+      </Descriptions> */}
+      <Conditions title={null} layout="vertical" conditions={{ ...offer, ytChannelId }} />
     </Modal>
   );
 };
@@ -108,7 +63,7 @@ const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract })
         description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
       />
       <Description text={description} />
-      <OfferList offers={post.offers} onComposeContract={onComposeContract} />
+      <OfferList offers={post.offers} post={post} onComposeContract={onComposeContract} />
     </List.Item>
   );
 };
@@ -123,25 +78,46 @@ export default function MyRequests({ posts }) {
   const remoteStorage = useRemoteStorage();
   const { currentTheme } = useThemeSwitcher();
 
-  const createContract = async ({ threshold, startDate, secondsAfter, share }) => {
-    const result = await blockchain.createPromotion({
-      ownerAddress: currentPost.author.ethAddress,
-      mentorAddress: currentOffer.author.ethAddress,
-      thresholdEth: threshold,
+  const createContract = async (
+    { ytChannelId = "" },
+    { initialDeposit, thresholdETH, startDate, endDate, share, ytMinViewCount = 0, ytMinSubscriberCount = 0 },
+  ) => {
+    const conditions = {
+      owner: currentPost.author.ethAddress,
+      provider: currentOffer.author.ethAddress,
+      initialDeposit,
+      thresholdETH,
       startDate,
-      secondsAfter,
-      mentorCutAsPercentage: share,
+      endDate,
+      share,
+      ytChannelId: ytChannelId || "",
+      ytMinViewCount: ytMinViewCount || "0",
+      ytMinSubscriberCount: ytMinSubscriberCount || "0",
+    };
+    console.log(`Create contract with conditions: ${JSON.stringify(conditions)}`);
+    const contractAddress = await blockchain.createContract(conditions);
+    console.log(`New contract address: ${JSON.stringify(contractAddress)}`);
+    const metadataResult = await remoteStorage.putContract({
+      contractAddress,
+      ownerId: currentPost.author.objectId,
+      providerId: currentOffer.author.objectId,
+      conditions,
     });
-    console.log(`Result: ${JSON.stringify(result)}`);
+    console.log(`Metadata creation result: ${JSON.stringify(metadataResult)}`);
+    await remoteStorage.setOfferStatus(currentOffer.objectId, "accepted");
     setIsContractModalVisible(false);
   };
 
-  const closeModal = () => {
+  const closeContractModal = () => {
+    setCurrentPost();
+    setCurrentOffer();
     setIsContractModalVisible(false);
   };
 
-  const onComposeContract = offer => {
+  const onComposeContract = (post, offer) => {
+    console.log(`Compose contract with offer ${JSON.stringify(offer)}`);
     setCurrentOffer(offer);
+    setCurrentPost(post);
     setIsContractModalVisible(true);
   };
 
@@ -167,25 +143,41 @@ export default function MyRequests({ posts }) {
         <PostEditorModal
           visible={isEditModalVisible}
           title="Edit this post"
-          initialValues={currentPost}
+          initialValues={{
+            ...currentPost,
+            period: [moment(currentPost.startDate * 1000), moment(currentPost.endDate * 1000)],
+          }}
           onCancel={() => {
             setIsEditModalVisible(false);
+            setCurrentPost();
           }}
-          onFinish={async props => {
-            await remoteStorage.putPost(props);
+          onOk={async props => {
+            await remoteStorage.putPost({ ...props, objectId: currentPost.objectId });
             setIsEditModalVisible(false);
+            message.success("Post updated correctly!");
           }}
         />
       )}
 
-      {currentOffer && (
+      {currentPost && currentOffer && (
         <ContractModal
+          title="Contract conditions"
+          post={currentPost}
           offer={currentOffer}
           visible={isContractModalVisible}
-          onOk={createContract}
-          onCancel={closeModal}
+          onOk={() => createContract(currentPost, currentOffer)}
+          onCancel={closeContractModal}
         />
       )}
+      {/* {currentPost && currentOffer && (
+        <ContractModal
+          title="Make an offer"
+          offer={currentOffer}
+          visible={isContractModalVisible}
+          onOk={createContract(currentPost)}
+          onCancel={closeModal}
+        />
+      )} */}
     </>
   );
 }

@@ -4,37 +4,37 @@ pragma solidity >=0.6.0;
 import "./Promotion.sol";
 import "./CloneFactory.sol";
 
-// import "@openzeppelin/contracts/access/Ownable.sol";
-
 contract PromotionFactory is CloneFactory {
     address public contractLibraryAddress;
 
-    event PromotionCreated(address newPromotionAddress);
+    event PromotionCreated(address payable newPromotionAddress);
 
     constructor(address _contractLibraryAddress) {
         contractLibraryAddress = _contractLibraryAddress;
     }
 
-    // function setLibraryAddress(address _contractLibraryAddress) external {
-    //     contractLibraryAddress = _contractLibraryAddress;
-    // }
-
     function createPromotion(
-        address ownerAddress,
-        address mentorAddress,
-        uint256 thresholdEth,
+        address owner,
+        address provider,
+        uint256 thresholdETH,
         uint256 startDate,
-        uint256 secondsAfter,
-        uint256 mentorCutAsPercentage
-    ) external {
-        address clone = createClone(contractLibraryAddress);
+        uint256 endDate,
+        uint256 share,
+        string calldata ytChannelId,
+        uint256 ytMinViewCount,
+        uint256 ytMinSubscriberCount
+    ) external returns (address payable clone) {
+        clone = payable(createClone(contractLibraryAddress));
         Promotion(clone).initialize(
-            ownerAddress,
-            mentorAddress,
-            thresholdEth,
+            owner,
+            provider,
+            thresholdETH,
             startDate,
-            secondsAfter,
-            mentorCutAsPercentage
+            endDate,
+            share,
+            ytChannelId,
+            ytMinViewCount,
+            ytMinSubscriberCount
         );
         emit PromotionCreated(clone);
     }

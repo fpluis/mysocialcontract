@@ -1,18 +1,19 @@
 import React from "react";
 import { Button, Form, DatePicker, InputNumber, Input, Modal } from "antd";
+import moment from "moment";
 
 const { RangePicker } = DatePicker;
 
-export default function PostEditorModal({
-  visible,
-  onCancel,
-  onOk,
-  title,
-  initialValues = {
-    title: "",
-    description: "",
-  },
-}) {
+export default function OfferModal({ visible, onCancel, onOk, title, post }) {
+  const initialValues = {
+    comment: "",
+    initialDeposit: post.initialDeposit || 0,
+    share: post.share,
+    thresholdETH: post.thresholdETH || null,
+    period: [moment(post.startDate * 1000), moment(post.endDate * 1000)],
+    ytMinViewCount: post.ytMinViewCount,
+    ytMinSubscriberCount: post.ytMinSubscriberCount,
+  };
   return (
     <Modal visible={visible} title={title} footer={null} onCancel={onCancel}>
       <Form
@@ -23,26 +24,20 @@ export default function PostEditorModal({
         wrapperCol={{ span: 14 }}
         onFinish={onOk}
       >
-        <Form.Item name="title" label="Title" required={true}>
-          <Input />
-        </Form.Item>
-        <Form.Item name="description" label="Description">
+        <Form.Item name="comment" label="Comment">
           <Input.TextArea rows={16} />
         </Form.Item>
-        <Form.Item name="share" label="Patron's share" required={true}>
-          <InputNumber min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
-        </Form.Item>
-        <Form.Item name="period" label="Period" required={true}>
-          <RangePicker />
-        </Form.Item>
-        <Form.Item name="initialDeposit" label="Initial deposit" required={true}>
+        <Form.Item name="initialDeposit" label="Initial deposit">
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="share" label="Patron's share">
+          <InputNumber min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item name="thresholdETH" label="Threshold funds">
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="ytChannelId" label="Youtube channel id">
-          <Input />
+        <Form.Item name="period" label="Period">
+          <RangePicker />
         </Form.Item>
         <Form.Item name="ytMinViewCount" label="Youtube Views">
           <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
