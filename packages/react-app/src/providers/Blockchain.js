@@ -6,7 +6,20 @@ import { useAuthentication } from ".";
 
 const { abi: PromotionFactoryABI, address: PromotionFactoryAddress } =
   hardhat_contracts[42].kovan.contracts.PromotionFactory;
-const { abi: PromotionABI, address: PromotionAddress } = hardhat_contracts[42].kovan.contracts.Promotion;
+const { abi: PromotionABI } = hardhat_contracts[42].kovan.contracts.Promotion;
+
+const normalizeOnChainValue = (type, value) => {
+  switch (type) {
+    case "weinumber":
+      return value / 1000000000000000000;
+    case "number":
+      return Number(value);
+    case "boolean":
+    case "string":
+    default:
+      return value;
+  }
+};
 
 export const Blockchain = {
   Authentication: null,
@@ -14,6 +27,7 @@ export const Blockchain = {
   createContract: async ({
     owner,
     provider,
+    initialDeposit,
     thresholdETH,
     startDate,
     endDate,
@@ -26,7 +40,8 @@ export const Blockchain = {
     const params = {
       owner,
       provider,
-      thresholdETH: BigNumber.from(`${thresholdETH * 100000000000000000}`),
+      initialDeposit: BigNumber.from(`${initialDeposit * 1000000000000000000}`),
+      thresholdETH: BigNumber.from(`${thresholdETH * 1000000000000000000}`),
       startDate,
       endDate,
       share,
@@ -34,12 +49,17 @@ export const Blockchain = {
       ytMinViewCount: "0",
       ytMinSubscriberCount: ytMinSubscriberCount == null ? 0 : ytMinSubscriberCount,
     };
-    console.log(`Create contract with params ${JSON.stringify(params)}`);
+    console.log(
+      `Create Promotion with params ${JSON.stringify(params)}; msgvalue: ${Moralis.Units.ETH(
+        `${initialDeposit}`,
+      )}; Initial deposit arg ${BigNumber.from(`${initialDeposit * 1000000000000000000}`).toString()}`,
+    );
     const result = await Moralis.executeFunction({
       contractAddress: PromotionFactoryAddress,
       functionName: "createPromotion",
       abi: PromotionFactoryABI,
       params,
+      msgValue: Moralis.Units.ETH(`${initialDeposit}`),
     });
     console.log(`Create promotion result: ${JSON.stringify(result)}`);
     const {
@@ -53,6 +73,38 @@ export const Blockchain = {
   },
   getContract: contractAddress => {
     return new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
+  },
+  getContractProps: async contractAddress => {
+    console.log(`Get conditions of contract at ${contractAddress}`);
+    const contract = new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
+    console.log(contract);
+    const onChainProps = [
+      { type: "weinumber", name: "initialDeposit" },
+      { type: "weinumber", name: "thresholdETH" },
+      { type: "number", name: "startDate" },
+      { type: "number", name: "endDate" },
+      { type: "number", name: "share" },
+      { type: "number", name: "ytViews" },
+      { type: "number", name: "ytSubs" },
+      { type: "number", name: "ytMinViewCount" },
+      { type: "number", name: "ytMinSubscriberCount" },
+      // { type: "string", name: "provider" },
+      // { type: "string", name: "owner" },
+      { type: "string", name: "ytChannelId" },
+      { type: "bool", name: "isSuccessful" },
+      { type: "bool", name: "isProviderPaid" },
+    ];
+    const values = await Promise.all(
+      onChainProps.map(({ name }) => {
+        console.log(`Get ${name}`);
+        return contract.methods[name]().call();
+      }),
+    );
+    return values.reduce((props, rawValue, index) => {
+      const { type, name } = onChainProps[index];
+      props[name] = normalizeOnChainValue(type, rawValue);
+      return props;
+    }, {});
   },
   checkConditions: async contractAddress => {
     const linkTransferResult = await Moralis.transfer({

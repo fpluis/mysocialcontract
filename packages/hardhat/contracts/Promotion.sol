@@ -13,6 +13,7 @@ contract Promotion is ChainlinkClient {
     bytes32 private jobId;
     uint256 private fee;
 
+    uint256 public initialDeposit;
     uint256 public thresholdETH;
     uint256 public startDate;
     uint256 public endDate;
@@ -25,21 +26,26 @@ contract Promotion is ChainlinkClient {
     address public owner;
     string public ytChannelId;
     bool public isSuccessful;
-    bool private isProviderPaid;
+    bool public isProviderPaid;
 
     function initialize(
         address _owner,
         address _provider,
+        uint256 _initialDeposit,
         uint256 _thresholdETH,
         uint256 _startDate,
         uint256 _endDate,
         uint256 _share,
         string calldata _ytChannelId,
         uint256 _ytMinViewCount,
-        uint256 _ytMinSubscriberCount
-    ) public {
+        uint256 _ytMinSubscriberCount,
+        uint256 paidAmount
+    ) public payable {
+        require(
+            _initialDeposit == 0 || paidAmount >= _initialDeposit,
+            "If the initial deposit is set, the minimum funds must be also present in the transaction"
+        );
         setPublicChainlinkToken();
-        // oracle = 0x22217862db8312c7aEA9150a52662E74756bc744;
         jobId = "7ab68903a4bd49168f67a1bdb727c1f0";
         setChainlinkToken(0xa36085F69e2889c224210F603D836748e7dC0088);
         setChainlinkOracle(0x22217862db8312c7aEA9150a52662E74756bc744);
@@ -47,6 +53,7 @@ contract Promotion is ChainlinkClient {
 
         owner = _owner;
         provider = _provider;
+        initialDeposit = _initialDeposit;
         thresholdETH = _thresholdETH;
         startDate = _startDate;
         endDate = _endDate * 1 seconds;

@@ -60,21 +60,19 @@ export default function PostsView() {
     if (route === "/me/offers" && myOffers.length === 0) {
       const offers = await remoteStorage.getOffers({ authorId: user.id });
       setMyOffers(offers);
-      console.log(`My (${user.id}) offers: ${JSON.stringify(offers.map(post => post.toJSON()))}`);
+      console.log(`My (${user.id}) offers: ${JSON.stringify(offers)}`);
     }
 
-    if (route === "/me/contracts" && remoteStorage.web3Ready && contractsIOwn.length === 0) {
+    if (route === "/me/contracts" && contractsIOwn.length === 0) {
       const contractsIOwn = await remoteStorage.getContracts({ ownerId: user.id });
-      setContractsIOwn(contractsIOwn.map(contract => contract.toJSON()));
-      console.log(`Contracts I (${user.id}) own: ${JSON.stringify(contractsIOwn.map(contract => contract.toJSON()))}`);
+      setContractsIOwn(contractsIOwn);
+      console.log(`Contracts I (${user.id}) own: ${JSON.stringify(contractsIOwn)}`);
     }
 
-    if (route === "/me/contracts" && remoteStorage.web3Ready && contractsIProvide.length === 0) {
+    if (route === "/me/contracts" && contractsIProvide.length === 0) {
       const contractsIProvide = await remoteStorage.getContracts({ providerId: user.id });
-      setContractsIProvide(contractsIProvide.map(contract => contract.toJSON()));
-      console.log(
-        `Contracts I (${user.id}) provider: ${JSON.stringify(contractsIOwn.map(contract => contract.toJSON()))}`,
-      );
+      setContractsIProvide(contractsIProvide);
+      console.log(`Contracts I (${user.id}) provider: ${JSON.stringify(contractsIOwn)}`);
     }
   }, [route, remoteStorage.web3Ready]);
 

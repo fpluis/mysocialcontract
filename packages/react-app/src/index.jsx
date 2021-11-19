@@ -23,15 +23,15 @@ ReactDOM.render(
   <ThemeSwitcherProvider themeMap={themes} defaultTheme={prevTheme || "light"}>
     <LocalStorageProvider>
       <AuthenticationProvider>
-        <RemoteStorageProvider>
-          <BlockchainProvider>
+        <BlockchainProvider>
+          <RemoteStorageProvider>
             <HashRouter basename={"/"}>
               <MessagingProvider>
                 <App />
               </MessagingProvider>
             </HashRouter>
-          </BlockchainProvider>
-        </RemoteStorageProvider>
+          </RemoteStorageProvider>
+        </BlockchainProvider>
       </AuthenticationProvider>
     </LocalStorageProvider>
   </ThemeSwitcherProvider>,

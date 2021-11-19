@@ -101,7 +101,6 @@ export default function MyRequests({ posts }) {
       contractAddress,
       ownerId: currentPost.author.objectId,
       providerId: currentOffer.author.objectId,
-      conditions,
     });
     console.log(`Metadata creation result: ${JSON.stringify(metadataResult)}`);
     await remoteStorage.setOfferStatus(currentOffer.objectId, "accepted");

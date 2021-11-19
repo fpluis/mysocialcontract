@@ -1,13 +1,13 @@
 import Moralis from "moralis";
 import React, { useContext, useMemo, useState } from "react";
-import { useAuthentication, useLocalStorage } from ".";
+import { useAuthentication, useBlockchain, useLocalStorage } from ".";
 import { CustomUser, OfferObject, PostObject, ContractObject } from "../classes";
 import hardhat_contracts from "../contracts/hardhat_contracts.json";
 
 const { abi: PromotionABI } = hardhat_contracts[42].kovan.contracts.Promotion;
 const POST_QUERY_LIMIT = 20;
 
-export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }, web3 = null) => {
+export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }, Blockchain = null) => {
   const putPost = ({
     objectId,
     title,
@@ -71,15 +71,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       props.profilePicture = picture.url();
     }
 
-    return props;
-  };
-
-  const getConditions = contractAddress => {
-    console.log(`Get conditions of contract at ${contractAddress}`);
-    const contract = new web3.eth.Contract(PromotionABI, contractAddress);
-    console.log(contract);
-    const props = {};
-    props.owner = contract.methods.owner();
     return props;
   };
 
@@ -209,14 +200,13 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     return offersWithAuthor;
   };
 
-  const putContract = async ({ contractAddress, ownerId, providerId, conditions }) => {
+  const putContract = async ({ contractAddress, ownerId, providerId }) => {
     const contract = new ContractObject();
     return contract
       .save({
         contractAddress,
         ownerId,
         providerId,
-        conditions,
       })
       .then(
         offer => {
@@ -251,25 +241,26 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         contract.set("owner", owner);
         const provider = await getUser(contract.get("providerId"));
         contract.set("provider", provider);
-        // const conditions = await getConditions(contract.get("contractAddress"));
-        // console.log(`Conditions,`, conditions);
-        // Object.entries(conditions).forEach(([name, value]) => {
-        //   contract.set(name, value);
-        // });
-        return contract;
+        if (Blockchain.web3) {
+          const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
+          console.log(`On-chain props:`, onChainProps);
+          Object.entries(onChainProps).forEach(([name, value]) => {
+            contract.set(name, value);
+          });
+        }
+
+        return contract.toJSON();
       }),
     );
     console.log(`Offers with author ${JSON.stringify(hydratedContracts)}`);
     hydratedContracts.forEach(contract => {
-      const value = JSON.stringify(contract);
-      console.log(`Serializing offer ${value}`);
-      LocalStorage.setItem(value.objectId, value);
+      console.log(`Serializing offer ${contract}`);
+      LocalStorage.setItem(contract.objectId, contract);
     });
     return hydratedContracts;
   };
 
   return {
-    web3Ready: web3 != null,
     putPost,
     getUser,
     getPosts,
@@ -285,17 +276,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 const RemoteStorageProviderContext = React.createContext(RemoteStorage());
 
 export const RemoteStorageProvider = ({ children = null }) => {
-  const [web3, setWeb3] = useState();
-  useMemo(async () => {
-    const web3 = await Moralis.enableWeb3();
-    setWeb3(web3);
-  }, []);
-
   const LocalStorage = useLocalStorage();
   const Authentication = useAuthentication();
+  const Blockchain = useBlockchain();
   console.log(`Auth user: ${JSON.stringify(Authentication.user)}`);
   return (
-    <RemoteStorageProviderContext.Provider value={RemoteStorage(LocalStorage, Authentication, web3)}>
+    <RemoteStorageProviderContext.Provider value={RemoteStorage(LocalStorage, Authentication, Blockchain)}>
       {children}
     </RemoteStorageProviderContext.Provider>
   );

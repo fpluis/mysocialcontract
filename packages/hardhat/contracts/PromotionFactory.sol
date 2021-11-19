@@ -16,6 +16,7 @@ contract PromotionFactory is CloneFactory {
     function createPromotion(
         address owner,
         address provider,
+        uint256 initialDeposit,
         uint256 thresholdETH,
         uint256 startDate,
         uint256 endDate,
@@ -23,19 +24,25 @@ contract PromotionFactory is CloneFactory {
         string calldata ytChannelId,
         uint256 ytMinViewCount,
         uint256 ytMinSubscriberCount
-    ) external returns (address payable clone) {
+    ) external payable returns (address payable clone) {
         clone = payable(createClone(contractLibraryAddress));
         Promotion(clone).initialize(
             owner,
             provider,
+            initialDeposit,
             thresholdETH,
             startDate,
             endDate,
             share,
             ytChannelId,
             ytMinViewCount,
-            ytMinSubscriberCount
+            ytMinSubscriberCount,
+            msg.value
         );
+        if (msg.value > 0) {
+            clone.transfer(msg.value);
+        }
+
         emit PromotionCreated(clone);
     }
 }

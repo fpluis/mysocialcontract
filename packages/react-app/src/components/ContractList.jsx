@@ -1,14 +1,12 @@
-import { List, Button, DatePicker, Avatar, Descriptions, Tooltip, Space } from "antd";
+import { List, Button, Avatar, Col, Row, Space } from "antd";
 import React from "react";
 import Blockies from "react-blockies";
-import moment from "moment";
 import ReactTimeAgo from "react-time-ago";
-import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { Conditions } from ".";
 import { useBlockchain } from "../providers";
 // import "./ContractList.css";
 
-const { RangePicker } = DatePicker;
+const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
 export default function ContractList({ contracts = [] }) {
   const blockchain = useBlockchain();
@@ -21,8 +19,18 @@ export default function ContractList({ contracts = [] }) {
       className="contract-list"
     >
       {contracts.map((contract, key) => {
-        const { owner, conditions, createdAt, contractAddress } = contract;
+        const { owner, createdAt, contractAddress, isSuccessful } = contract;
 
+        const deadlineInSeconds = contract.endDate;
+        const nowInSeconds = new Date().getTime() / 1000;
+        const checkDeadline = deadlineInSeconds + ONE_DAY_IN_SECONDS;
+        const status = isSuccessful
+          ? "Successful"
+          : deadlineInSeconds > nowInSeconds
+          ? "In Progress"
+          : checkDeadline > nowInSeconds
+          ? "Finished"
+          : "Failed";
         const contractEventListener = blockchain.getContract(contractAddress);
         console.log(`Promotion contract`);
         console.log(contractEventListener);
@@ -45,57 +53,7 @@ export default function ContractList({ contracts = [] }) {
             console.log(`Event error`, error, receipt);
           });
         return (
-          <List.Item
-            key={key}
-            extra={
-              <>
-                <Button
-                  style={{ marginRight: "8px" }}
-                  onClick={async () => {
-                    const contractEventListener = blockchain.getContract(contractAddress);
-                    contractEventListener.methods
-                      .ytViews()
-                      .call()
-                      .then(youtubeViews => {
-                        console.log(`Youtube views: ${youtubeViews}`);
-                      });
-                    contractEventListener.methods
-                      .ytSubs()
-                      .call()
-                      .then(youtubeViews => {
-                        console.log(`Youtube subs: ${youtubeViews}`);
-                      });
-                    contractEventListener.methods
-                      .isSuccessful()
-                      .call()
-                      .then(isSuccessful => {
-                        console.log(`Is successful?: ${isSuccessful}`);
-                      });
-                  }}
-                >
-                  Debug
-                </Button>
-                <Button
-                  style={{ marginRight: "8px" }}
-                  onClick={async () => {
-                    const result = await blockchain.checkConditions(contractAddress);
-                    console.log(`Check completion result: ${JSON.stringify(result)},`, result);
-                  }}
-                >
-                  Check completion
-                </Button>
-                <Button>
-                  <a
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    href={`https://kovan.etherscan.io/address/${contractAddress}`}
-                  >
-                    View on Etherscan
-                  </a>
-                </Button>
-              </>
-            }
-          >
+          <List.Item key={key}>
             <List.Item.Meta
               avatar={
                 <Avatar
@@ -104,27 +62,51 @@ export default function ContractList({ contracts = [] }) {
                   src={owner.profilePicture || <Blockies seed={owner.ethAddress.toLowerCase()} />}
                 ></Avatar>
               }
-              title={owner.username}
-              description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
+              title={
+                <Col span={24}>
+                  <Row>
+                    <Col span={12}>
+                      <h4>{owner.username}</h4>
+                    </Col>
+                    <Col span={12}>
+                      <Button
+                        style={{ float: "right" }}
+                        onClick={async () => {
+                          const result = await blockchain.checkConditions(contractAddress);
+                          console.log(`Check completion result: ${JSON.stringify(result)},`, result);
+                        }}
+                      >
+                        Check completion
+                      </Button>
+                      <Button style={{ marginRight: "8px", float: "right" }}>
+                        <a
+                          rel="noopener noreferrer"
+                          target="_blank"
+                          href={`https://kovan.etherscan.io/address/${contractAddress}`}
+                        >
+                          View on Etherscan
+                        </a>
+                      </Button>
+                    </Col>
+                  </Row>
+                </Col>
+              }
+              description={
+                <Col span={24}>
+                  <Row>
+                    <h4>Status: {status}</h4>
+                  </Row>
+                  {createdAt && (
+                    <Row>
+                      <p>
+                        Started <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />
+                      </p>
+                    </Row>
+                  )}
+                </Col>
+              }
             />
-            {/* <Descriptions title={null} bordered layout="horizontal" column={1}>
-              <Descriptions.Item label="Provider">
-                <Avatar
-                  size={32}
-                  alt={provider.username}
-                  src={provider.profilePicture || <Blockies seed={provider.ethAddress.toLowerCase()} />}
-                ></Avatar>
-                {provider.username}
-              </Descriptions.Item>
-              {share && <Descriptions.Item label="Share">{share}%</Descriptions.Item>}
-              {deposit && <Descriptions.Item label="Initial deposit">{deposit}</Descriptions.Item>}
-              {startDate && endDate && (
-                <Descriptions.Item label="Period">
-                  <RangePicker defaultValue={[moment(startDate), moment(endDate)]} disabled />
-                </Descriptions.Item>
-              )}
-            </Descriptions> */}
-            <Conditions title={null} layout="horizontal" conditions={conditions} />
+            <Conditions title={null} layout="horizontal" conditions={contract} />
           </List.Item>
         );
       })}
