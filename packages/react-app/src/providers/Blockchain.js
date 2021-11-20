@@ -120,6 +120,15 @@ export const Blockchain = {
     console.log(`My address ${ethAddress} user:`, Blockchain.Authentication.user);
     return contract.methods.checkConditions().send({ from: ethAddress });
   },
+  withdraw: async contractAddress => {
+    const withdrawResult = await Moralis.executeFunction({
+      contractAddress,
+      functionName: "withdraw",
+      abi: PromotionABI,
+    });
+    console.log(`Withdraw result: ${JSON.stringify(withdrawResult)}`);
+    return withdrawResult;
+  },
 };
 
 const BlockchainProviderContext = React.createContext(Blockchain);

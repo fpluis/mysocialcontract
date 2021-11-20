@@ -3,12 +3,14 @@ import React from "react";
 import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
 import { Conditions } from ".";
-import { useBlockchain } from "../providers";
+import { useAuthentication, useBlockchain } from "../providers";
 // import "./ContractList.css";
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
 export default function ContractList({ contracts = [] }) {
+  const { user: me } = useAuthentication();
+  const myEthAddress = me.get("ethAddress");
   const blockchain = useBlockchain();
   console.log(`Render contract list with contracts ${JSON.stringify(contracts)}`);
   return (
@@ -19,11 +21,12 @@ export default function ContractList({ contracts = [] }) {
       className="contract-list"
     >
       {contracts.map((contract, key) => {
-        const { owner, createdAt, contractAddress, isSuccessful } = contract;
+        const { owner, provider, createdAt, contractAddress, isSuccessful } = contract;
 
         const deadlineInSeconds = contract.endDate;
         const nowInSeconds = new Date().getTime() / 1000;
         const checkDeadline = deadlineInSeconds + ONE_DAY_IN_SECONDS;
+        console.log(`Deadline in seconds: ${deadlineInSeconds}; now in seconds: ${nowInSeconds}`);
         const status = isSuccessful
           ? "Successful"
           : deadlineInSeconds > nowInSeconds
@@ -31,6 +34,9 @@ export default function ContractList({ contracts = [] }) {
           : checkDeadline > nowInSeconds
           ? "Finished"
           : "Failed";
+        const canWithdraw =
+          (status === "Successful" && provider.ethAddress === myEthAddress) ||
+          (["Failed", "Finished", "Successful"].includes(status) && owner.ethAddress === myEthAddress);
         const contractEventListener = blockchain.getContract(contractAddress);
         console.log(`Promotion contract`);
         console.log(contractEventListener);
@@ -65,10 +71,10 @@ export default function ContractList({ contracts = [] }) {
               title={
                 <Col span={24}>
                   <Row>
-                    <Col span={12}>
+                    <Col span={6}>
                       <h4>{owner.username}</h4>
                     </Col>
-                    <Col span={12}>
+                    <Col span={18}>
                       <Button
                         style={{ float: "right" }}
                         onClick={async () => {
@@ -87,6 +93,17 @@ export default function ContractList({ contracts = [] }) {
                           View on Etherscan
                         </a>
                       </Button>
+                      {canWithdraw && (
+                        <Button
+                          style={{ marginRight: "8px", float: "right" }}
+                          onClick={async () => {
+                            const result = await blockchain.withdraw(contractAddress);
+                            console.log(`Withdraw result: ${JSON.stringify(result)},`, result);
+                          }}
+                        >
+                          Withdraw funds
+                        </Button>
+                      )}
                     </Col>
                   </Row>
                 </Col>
