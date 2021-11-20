@@ -53,15 +53,15 @@ export default function AppBar() {
               />
             </Link>
           ) : (
-            <div>
+            <Link>
               <Button
                 icon={<LoginOutlined alt="Log in" className={`icon ${currentTheme}`}></LoginOutlined>}
                 onClick={async () => {
-                  const user = await login({ signingMessage: "Log into Popularize" });
+                  const user = await login({ signingMessage: "Log into Mysocialcontract" });
                   console.log(`Logged in as user ${JSON.stringify(user)}`);
                 }}
               />
-            </div>
+            </Link>
           )}
         </Col>
       </Row>

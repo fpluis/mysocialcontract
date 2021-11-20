@@ -9,7 +9,7 @@ Moralis.Object.registerSubclass("_User", CustomUser);
 const AuthenticationProviderContext = React.createContext({});
 
 export const AuthenticationProvider = ({ children = null }) => {
-  let user = CustomUser.current();
+  let user = CustomUser.current() || { get: () => null, authenticated: () => false };
   const [updatedAt, setUpdatedAt] = useState(user.get("updatedAt") || "");
   const Authentication = {
     user,
