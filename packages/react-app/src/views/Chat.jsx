@@ -10,7 +10,7 @@ import { Row, Col } from "antd";
 
 export default function ChatView() {
   const { id: destinataryId } = useParams();
-  const { user: me } = useAuthentication();
+  const { profile: myProfile } = useAuthentication();
 
   const { chats, messageMap, sendMessage, createChat, saveChat } = useMessaging();
   const [currentChat, setCurrentChat] = useState(destinataryId == null ? chats[0] : null);
@@ -25,7 +25,7 @@ export default function ChatView() {
       if (existingChat) {
         setCurrentChat(existingChat);
       } else {
-        const chat = await createChat(me.id, destinataryId);
+        const chat = await createChat(myProfile.userId, destinataryId);
         setIsNewChat(true);
         setCurrentChat(chat);
       }
@@ -43,7 +43,7 @@ export default function ChatView() {
       } = textInputRef;
       const { value } = input;
       input.value = "";
-      const message = { content: value, source: me.id, destinatary: destinataryId };
+      const message = { content: value, source: myProfile.userId, destinatary: destinataryId };
       if (isNewChat) {
         return saveChat(currentChat).then(chat => {
           message.chatId = chat.objectId;
@@ -71,7 +71,7 @@ export default function ChatView() {
     theme: "white",
     view: "list",
     type: "text",
-    position: message.source === me.id ? "right" : "left",
+    position: message.source === myProfile.userId ? "right" : "left",
     text: message.content,
     date: new Date(message.createdAt),
   }));

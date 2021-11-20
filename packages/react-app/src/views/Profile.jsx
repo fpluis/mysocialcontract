@@ -1,7 +1,7 @@
 import { UploadOutlined } from "@ant-design/icons";
 import { Button, message, Upload, Col, Row, Form, Input } from "antd";
 import React, { useState, useMemo } from "react";
-import { useAuthentication, useRemoteStorage } from "../providers";
+import { useAuthentication } from "../providers";
 
 const profilePictureUpload = event => {
   console.log("Upload event:", event);
@@ -20,7 +20,8 @@ const getBase64 = (img, callback) => {
 };
 
 const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "picture" }) => {
-  const [imageUrl, setImageUrl] = useState(initialImage || "");
+  const [imageUrl, setImageUrl] = useState(initialImage);
+  console.log(`Render avatar upload; imageUrl ${imageUrl}`);
 
   const beforeUpload = file => {
     if (!["image/jpeg", "image/png"].includes(file.type)) {
@@ -64,22 +65,24 @@ const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "pi
 };
 
 export default function ProfileView() {
-  const { user, updateUser, setUserAttribute, logOut } = useAuthentication();
+  const { user, profile, updateUser, setUserAttribute, logOut } = useAuthentication();
   const [props, setProps] = useState({});
+  const [profilePicture, setProfilePicture] = useState();
 
   useMemo(() => {
-    if (user.authenticated()) {
-      const { username, description, profilePicture } = user.toJSON();
-      console.log(`Setting props from ${JSON.stringify(user)}`);
+    if (user.authenticated() && profile.userId) {
+      const { username = "", description = "", profilePicture = { url: "" } } = profile;
+      console.log(`Setting props from ${JSON.stringify(profile)}`);
       const props = { username, description };
 
       if (profilePicture && profilePicture.url) {
-        props.profilePicture = profilePicture.url;
+        console.log(`Profile url: ${profilePicture.url}`);
+        setProfilePicture(profilePicture.url);
       }
 
       setProps(props);
     }
-  }, [user.authenticated()]);
+  }, [user.authenticated(), profile]);
 
   return (
     <>
@@ -97,7 +100,7 @@ export default function ProfileView() {
               wrapperCol={{ span: 14 }}
               onFinish={async formProps => {
                 console.log(`Form props: ${JSON.stringify(formProps)}`);
-                const { username, description } = formProps;
+                const { username = "", description = "" } = formProps;
                 if (username.length > 0) {
                   setUserAttribute("username", username);
                 }
@@ -112,14 +115,18 @@ export default function ProfileView() {
             >
               <Form.Item label="Profile Picture">
                 <Form.Item valuePropName="profilePicture" getValueFromEvent={profilePictureUpload} noStyle>
-                  <AvatarUpload
-                    initialImage={props.profilePicture}
-                    customRequest={async args => {
-                      setUserAttribute("profilePicture", args, true);
-                    }}
-                    maxSizeInMB={4}
-                    listType="picture-card"
-                  />
+                  {profile.userId ? (
+                    <AvatarUpload
+                      initialImage={profilePicture}
+                      customRequest={async args => {
+                        setUserAttribute("profilePicture", args, true);
+                      }}
+                      maxSizeInMB={4}
+                      listType="picture-card"
+                    />
+                  ) : (
+                    <UploadOutlined />
+                  )}
                 </Form.Item>
               </Form.Item>
               <Form.Item name="username" label="Username">

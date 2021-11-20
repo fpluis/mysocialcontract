@@ -1,7 +1,7 @@
 import Moralis from "moralis";
 import React, { useContext, useEffect, useCallback, useState, useMemo } from "react";
 import { useAuthentication } from ".";
-import { CustomUser, MessageObject, ChatObject } from "../classes";
+import { ProfileObject, MessageObject, ChatObject } from "../classes";
 
 const loadMessages = chatId => {
   const query = new Moralis.Query(MessageObject);
@@ -28,13 +28,13 @@ const loadChats = async userId => {
       const object = chat.toJSON();
       const { participants } = object;
       const [otherId] = participants.filter(participant => participant !== userId);
-      // console.log(`Participants in chat ${object.objectId}: ${JSON.stringify(participants)}`);
-      const userQuery = new Moralis.Query(CustomUser);
-      const other = await userQuery.get(otherId);
+      console.log(`Other participant's id: ${otherId}`);
+      const profileQuery = new Moralis.Query(ProfileObject);
+      const other = await profileQuery.get(otherId);
       return {
         ...object,
         other: {
-          id: other.id,
+          userId: other.get("userId"),
           profilePicture: other.get("profilePicture"),
           username: other.get("username"),
           ethAddress: other.get("ethAddress"),
@@ -79,7 +79,7 @@ export const MessagingProvider = ({ children = null }) => {
 
   useEffect(() => {
     (async () => {
-      if (!user.authenticated() || !user.id) {
+      if (!user.authenticated()) {
         return;
       }
 
@@ -122,12 +122,12 @@ export const MessagingProvider = ({ children = null }) => {
 
   const messagingFunctions = {
     createChat: async (userId, otherId) => {
-      const query = new Moralis.Query(CustomUser);
+      const query = new Moralis.Query(ProfileObject);
       const other = await query.get(otherId);
       return {
         participants: [otherId, userId],
         other: {
-          id: other.id,
+          id: otherId,
           profilePicture: other.get("profilePicture"),
           username: other.get("username"),
           ethAddress: other.get("ethAddress"),

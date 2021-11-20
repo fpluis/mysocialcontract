@@ -1,4 +1,4 @@
-import { List, Button, Avatar, Col, Row, Space } from "antd";
+import { List, Button, Avatar, Col, Row } from "antd";
 import React from "react";
 import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
@@ -9,8 +9,8 @@ import { useAuthentication, useBlockchain } from "../providers";
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
 export default function ContractList({ contracts = [] }) {
-  const { user: me } = useAuthentication();
-  const myEthAddress = me.get("ethAddress");
+  const { profile: myProfile } = useAuthentication();
+  const { ethAddress: myEthAddress } = myProfile;
   const blockchain = useBlockchain();
   console.log(`Render contract list with contracts ${JSON.stringify(contracts)}`);
   return (

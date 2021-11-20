@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Avatar, Button, Divider, Row, Col } from "antd";
+import { Avatar, Button, Row, Col } from "antd";
 import { MessageOutlined, HomeOutlined, FileTextOutlined, LoginOutlined } from "@ant-design/icons";
 import { useAuthentication } from "../providers";
 import Blockies from "react-blockies";
@@ -8,12 +8,11 @@ import { useThemeSwitcher } from "react-css-theme-switcher";
 import "./AppBar.css";
 
 export default function AppBar() {
-  const { user, login } = useAuthentication();
+  const { user, profile, login } = useAuthentication();
   const { currentTheme } = useThemeSwitcher();
-  const { ethAddress = "" } = user;
-  const pictureObject = user.get("profilePicture");
-  const profilePicture = pictureObject ? pictureObject.url() : null;
-  console.log(`Profile picture ${JSON.stringify(pictureObject)}; user ${JSON.stringify(user)}`);
+  const { ethAddress = "", username = "", profilePicture } = profile;
+  console.log(`Profile picture ${JSON.stringify(profilePicture)}; profile ${JSON.stringify(profile)}`);
+  const profilePictureUrl = profilePicture ? profilePicture.url : null;
 
   const backgroundColor = currentTheme === "light" ? "white" : "#222222";
 
@@ -45,15 +44,15 @@ export default function AppBar() {
                   <Avatar
                     className={`icon ${currentTheme}`}
                     size={38}
-                    alt={user.authenticated() ? user.getUsername() : ""}
-                    src={profilePicture || <Blockies size={38} seed={ethAddress.toLowerCase()} />}
+                    alt={username}
+                    src={profilePictureUrl || <Blockies size={38} seed={ethAddress.toLowerCase()} />}
                   ></Avatar>
                 }
                 shape="circle"
               />
             </Link>
           ) : (
-            <Link>
+            <Link to={"/"}>
               <Button
                 icon={<LoginOutlined alt="Log in" className={`icon ${currentTheme}`}></LoginOutlined>}
                 onClick={async () => {
@@ -65,9 +64,6 @@ export default function AppBar() {
           )}
         </Col>
       </Row>
-      {/* <Row style={{ width: "100%", height: "32px" }}>
-        <Divider style={{ width: "100%" }} />
-      </Row> */}
     </Col>
   );
 }

@@ -1,7 +1,7 @@
 import Moralis from "moralis";
 import React, { useContext, useMemo, useState } from "react";
 import { useAuthentication, useBlockchain, useLocalStorage } from ".";
-import { CustomUser, OfferObject, PostObject, ContractObject } from "../classes";
+import { ProfileObject, OfferObject, PostObject, ContractObject } from "../classes";
 import hardhat_contracts from "../contracts/hardhat_contracts.json";
 
 const { abi: PromotionABI } = hardhat_contracts[42].kovan.contracts.Promotion;
@@ -28,9 +28,10 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     }
 
     const [start, end] = period;
+    const authorId = Authentication.profile.userId;
     return post
       .save({
-        authorId: Authentication.user.id,
+        authorId,
         title,
         description,
         initialDeposit,
@@ -44,8 +45,8 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       })
       .then(
         async post => {
-          console.log(`Object saved successfully, result`, post);
-          const author = await getUser(post.get("authorId"));
+          console.log(`Post by ${authorId} saved successfully, result`, post);
+          const author = await getProfile(authorId);
           post.set("author", author);
           return post;
         },
@@ -55,17 +56,25 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       );
   };
 
-  const getUser = async id => {
-    const query = new Moralis.Query(CustomUser);
-    const user = await query.get(id);
-    console.log(`User from remote storage: ${JSON.stringify(user)}`);
+  const getProfile = async userId => {
+    const query = new Moralis.Query(ProfileObject);
+    let profile;
+    try {
+      query.equalTo("userId", userId);
+      profile = await query.first();
+    } catch (error) {
+      console.log(`Error getting profile for ${userId},`, error);
+      profile = new ProfileObject({ userId });
+    }
+
+    console.log(`User from remote storage: ${JSON.stringify(profile)}`);
     const props = {
-      objectId: user.id,
-      username: user.get("username"),
-      ethAddress: user.get("ethAddress"),
+      userId: profile.get("userId"),
+      username: profile.get("username") || "",
+      ethAddress: profile.get("ethAddress"),
     };
-    const picture = user.get("profilePicture");
-    console.log(`Get user ${id}`);
+    const picture = profile.get("profilePicture");
+    console.log(`Get profile of user ${userId}`);
     console.log(`Profile picture: ${JSON.stringify(picture)}`);
     if (picture) {
       props.profilePicture = picture.url();
@@ -91,7 +100,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     console.log(`Posts: ${JSON.stringify(posts)}`);
     const postsWithAuthor = await Promise.all(
       posts.map(async post => {
-        const author = await getUser(post.get("authorId"));
+        const author = await getProfile(post.get("authorId"));
         post.set("author", author);
         return post.toJSON();
       }),
@@ -131,7 +140,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       .save({
         status: "active",
         comment,
-        authorId: Authentication.user.id,
+        authorId: Authentication.profile.userId,
         postId,
         initialDeposit,
         thresholdETH,
@@ -187,7 +196,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     console.log(`Offers: ${JSON.stringify(offers)}`);
     const offersWithAuthor = await Promise.all(
       offers.map(async offer => {
-        const author = await getUser(offer.get("authorId"));
+        const author = await getProfile(offer.get("authorId"));
         offer.set("author", author);
         return offer.toJSON();
       }),
@@ -237,9 +246,9 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     console.log(`Contracts with ownerId=${ownerId}, providerId=${providerId}: ${JSON.stringify(contracts)}`);
     const hydratedContracts = await Promise.all(
       contracts.map(async contract => {
-        const owner = await getUser(contract.get("ownerId"));
+        const owner = await getProfile(contract.get("ownerId"));
         contract.set("owner", owner);
-        const provider = await getUser(contract.get("providerId"));
+        const provider = await getProfile(contract.get("providerId"));
         contract.set("provider", provider);
         if (Blockchain.web3) {
           const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
@@ -262,7 +271,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
   return {
     putPost,
-    getUser,
+    getUser: getProfile,
     getPosts,
     getPost,
     putOffer,
@@ -279,7 +288,6 @@ export const RemoteStorageProvider = ({ children = null }) => {
   const LocalStorage = useLocalStorage();
   const Authentication = useAuthentication();
   const Blockchain = useBlockchain();
-  console.log(`Auth user: ${JSON.stringify(Authentication.user)}`);
   return (
     <RemoteStorageProviderContext.Provider value={RemoteStorage(LocalStorage, Authentication, Blockchain)}>
       {children}

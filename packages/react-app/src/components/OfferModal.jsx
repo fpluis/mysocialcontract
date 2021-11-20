@@ -30,7 +30,7 @@ export default function OfferModal({ visible, onCancel, onOk, title, post }) {
         <Form.Item name="initialDeposit" label="Initial deposit">
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="share" label="Patron's share">
+        <Form.Item name="share" label="Provider's share">
           <InputNumber min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item name="thresholdETH" label="Threshold funds">

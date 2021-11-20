@@ -11,7 +11,7 @@ const { Meta } = Card;
 
 export default function PostDetail({ post }) {
   const remoteStorage = useRemoteStorage();
-  const { user: me } = useAuthentication();
+  const { user, profile: myProfile } = useAuthentication();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const { currentTheme } = useThemeSwitcher();
 
@@ -33,7 +33,7 @@ export default function PostDetail({ post }) {
   };
 
   return (
-    <Col span={24}>
+    <Col span={24} style={{ marginBottom: "32px" }}>
       <h1>{title}</h1>
       <Card size="small">
         <Meta
@@ -55,10 +55,12 @@ export default function PostDetail({ post }) {
         </p>
       </Row>
       <Conditions conditions={post} />
-      {author.objectId !== me.id && (
+      {user.authenticated() && author.userId !== myProfile.userId && (
         <Row style={{ marginTop: "32px" }}>
-          <Button onClick={showModal}>Make an offer</Button>
-          <Link to={`/chat/${author.objectId}`}>
+          <Button style={{ marginRight: "16px" }} onClick={showModal}>
+            Make an offer
+          </Button>
+          <Link to={`/chat/${author.userId}`}>
             <Button>Send a message</Button>
           </Link>
         </Row>

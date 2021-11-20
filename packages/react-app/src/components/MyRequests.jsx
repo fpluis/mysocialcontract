@@ -99,8 +99,8 @@ export default function MyRequests({ posts }) {
     console.log(`New contract address: ${JSON.stringify(contractAddress)}`);
     const metadataResult = await remoteStorage.putContract({
       contractAddress,
-      ownerId: currentPost.author.objectId,
-      providerId: currentOffer.author.objectId,
+      ownerId: currentPost.author.userId,
+      providerId: currentOffer.author.userId,
     });
     console.log(`Metadata creation result: ${JSON.stringify(metadataResult)}`);
     await remoteStorage.setOfferStatus(currentOffer.objectId, "accepted");

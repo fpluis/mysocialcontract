@@ -9,7 +9,8 @@ import ReactTimeAgo from "react-time-ago";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
 
 export default function PostsView() {
-  const { user } = useAuthentication();
+  const { profile: myProfile } = useAuthentication();
+  console.log(`My profile: ${JSON.stringify(myProfile)}`);
   const remoteStorage = useRemoteStorage();
   const [isPostModalVisible, setCreatePostModalVisible] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -43,8 +44,8 @@ export default function PostsView() {
 
   useMemo(async () => {
     console.log(`Route: ${route}`);
-    if (route === "/me/requests" && myRequests.length === 0) {
-      const myPosts = await remoteStorage.getPosts(params, page, user.id);
+    if (route === "/me/requests" && myProfile.userId && myRequests.length === 0) {
+      const myPosts = await remoteStorage.getPosts(params, page, myProfile.userId);
       const offers = await remoteStorage.getOffers({ postIds: myPosts.map(({ objectId }) => objectId) });
       console.log(`All offers found for posts ${JSON.stringify(myPosts)}: ${JSON.stringify(offers)}`);
       const withOffers = myPosts.map(post => {
@@ -57,24 +58,24 @@ export default function PostsView() {
       setMyRequests(withOffers);
     }
 
-    if (route === "/me/offers" && myOffers.length === 0) {
-      const offers = await remoteStorage.getOffers({ authorId: user.id });
+    if (route === "/me/offers" && myProfile.userId && myOffers.length === 0) {
+      const offers = await remoteStorage.getOffers({ authorId: myProfile.userId });
       setMyOffers(offers);
-      console.log(`My (${user.id}) offers: ${JSON.stringify(offers)}`);
+      console.log(`My (${myProfile.userId}) offers: ${JSON.stringify(offers)}`);
     }
 
-    if (route === "/me/contracts" && contractsIOwn.length === 0) {
-      const contractsIOwn = await remoteStorage.getContracts({ ownerId: user.id });
+    if (route === "/me/contracts" && myProfile.userId && contractsIOwn.length === 0) {
+      const contractsIOwn = await remoteStorage.getContracts({ ownerId: myProfile.userId });
       setContractsIOwn(contractsIOwn);
-      console.log(`Contracts I (${user.id}) own: ${JSON.stringify(contractsIOwn)}`);
+      console.log(`Contracts I (${myProfile.userId}) own: ${JSON.stringify(contractsIOwn)}`);
     }
 
-    if (route === "/me/contracts" && contractsIProvide.length === 0) {
-      const contractsIProvide = await remoteStorage.getContracts({ providerId: user.id });
+    if (route === "/me/contracts" && myProfile.userId && contractsIProvide.length === 0) {
+      const contractsIProvide = await remoteStorage.getContracts({ providerId: myProfile.userId });
       setContractsIProvide(contractsIProvide);
-      console.log(`Contracts I (${user.id}) provider: ${JSON.stringify(contractsIOwn)}`);
+      console.log(`Contracts I (${myProfile.userId}) provider: ${JSON.stringify(contractsIOwn)}`);
     }
-  }, [route, remoteStorage.web3Ready]);
+  }, [route, remoteStorage.web3Ready, myProfile.userId]);
 
   const rejectOffer = async offer => {
     const result = await remoteStorage.setOfferStatus(offer.objectId, "rejected");
