@@ -39,12 +39,16 @@ export default function OfferModal({ visible, onCancel, onOk, title, post }) {
         <Form.Item name="period" label="Period">
           <RangePicker />
         </Form.Item>
-        <Form.Item name="ytMinViewCount" label="Youtube Views">
-          <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
-        </Form.Item>
-        <Form.Item name="ytMinSubscriberCount" label="Youtube Subscribers">
-          <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
-        </Form.Item>
+        {post.ytChannelId && (
+          <>
+            <Form.Item name="ytMinViewCount" label="Youtube Views">
+              <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item name="ytMinSubscriberCount" label="Youtube Subscribers">
+              <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
+            </Form.Item>
+          </>
+        )}
 
         <Form.Item
           wrapperCol={{

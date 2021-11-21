@@ -1,7 +1,7 @@
-import { List, Button, Descriptions, Modal, Row, DatePicker, InputNumber, Avatar, Space, message } from "antd";
-import React, { useState } from "react";
+import { List, Button, Col, Modal, Row, Avatar, Space, message } from "antd";
+import React, { useMemo, useState } from "react";
 import ReactTimeAgo from "react-time-ago";
-import { useBlockchain, useRemoteStorage } from "../providers";
+import { useAuthentication, useBlockchain, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import Blockies from "react-blockies";
 import { OfferList, PostEditorModal, Description, Conditions } from "./index";
@@ -36,10 +36,12 @@ const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
   );
 };
 
-const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract }) => {
+const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract, onRejectOffer }) => {
   console.log(`Render post ${JSON.stringify(post)}`);
-  const { title, description, createdAt, author } = post;
-
+  const { title, description, createdAt, author, offers = [], status } = post;
+  const offersToShow = offers.filter(({ status }) => status !== "rejected");
+  const statusMessage =
+    status === "active" ? <span>Accepting offers</span> : <span style={{ color: "#388e3c" }}>Signed</span>;
   return (
     <List.Item
       key={title}
@@ -60,28 +62,64 @@ const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract })
           ></Avatar>
         }
         title={title}
-        description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
+        description={
+          <Col span={24}>
+            <Row>
+              <h4 style={{ fontWeight: "bold" }}>{statusMessage}</h4>
+            </Row>
+            {createdAt && (
+              <Row>
+                <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />
+              </Row>
+            )}
+          </Col>
+        }
       />
       <Description text={description} />
-      <OfferList offers={post.offers} post={post} onComposeContract={onComposeContract} />
+      <Conditions title={null} layout="horizontal" conditions={post} />
+      <OfferList
+        offers={offersToShow}
+        post={post}
+        onComposeContract={onComposeContract}
+        onRejectOffer={onRejectOffer}
+      />
     </List.Item>
   );
 };
 
-export default function MyRequests({ posts }) {
-  console.log(`Displaying posts ${JSON.stringify(posts)}`);
+export default function MyRequests() {
+  console.log(`Render my requests`);
+  const blockchain = useBlockchain();
+  const remoteStorage = useRemoteStorage();
+  const { currentTheme } = useThemeSwitcher();
+  const { user, profile: myProfile } = useAuthentication();
+  const [requests, setRequests] = useState([]);
+
+  useMemo(async () => {
+    if (user.authenticated()) {
+      const myPosts = await remoteStorage.getPosts({ status: "active", authorId: myProfile.userId });
+      const offers = await remoteStorage.getOffers({ postIds: myPosts.map(({ objectId }) => objectId) });
+      console.log(`All offers found for posts ${JSON.stringify(myPosts)}: ${JSON.stringify(offers)}`);
+      const withOffers = myPosts.map(post => {
+        const { objectId: postId } = post;
+        const postOffers = offers.filter(({ postId: offerPostId }) => offerPostId === postId);
+        console.log(`Post offers: ${JSON.stringify(postOffers)}`);
+        post.offers = postOffers;
+        return post;
+      });
+      setRequests(withOffers);
+      console.log(`Updated requests: ${JSON.stringify(withOffers)}`);
+    }
+  }, [user, myProfile]);
+
   const [isContractModalVisible, setIsContractModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [currentOffer, setCurrentOffer] = useState();
   const [currentPost, setCurrentPost] = useState();
-  const blockchain = useBlockchain();
-  const remoteStorage = useRemoteStorage();
-  const { currentTheme } = useThemeSwitcher();
 
-  const createContract = async (
-    { ytChannelId = "" },
-    { initialDeposit, thresholdETH, startDate, endDate, share, ytMinViewCount = 0, ytMinSubscriberCount = 0 },
-  ) => {
+  const createContract = async (post, offer) => {
+    const { ytChannelId } = post;
+    const { initialDeposit, thresholdETH, startDate, endDate, share, ytMinViewCount, ytMinSubscriberCount } = offer;
     const conditions = {
       owner: currentPost.author.ethAddress,
       provider: currentOffer.author.ethAddress,
@@ -90,21 +128,34 @@ export default function MyRequests({ posts }) {
       startDate,
       endDate,
       share,
-      ytChannelId: ytChannelId || "",
-      ytMinViewCount: ytMinViewCount || "0",
-      ytMinSubscriberCount: ytMinSubscriberCount || "0",
+      ytChannelId,
+      ytMinViewCount,
+      ytMinSubscriberCount,
     };
     console.log(`Create contract with conditions: ${JSON.stringify(conditions)}`);
     const contractAddress = await blockchain.createContract(conditions);
     console.log(`New contract address: ${JSON.stringify(contractAddress)}`);
-    const metadataResult = await remoteStorage.putContract({
-      contractAddress,
-      ownerId: currentPost.author.userId,
-      providerId: currentOffer.author.userId,
+    return Promise.all([
+      remoteStorage.putContract({
+        contractAddress,
+        ownerId: currentPost.author.userId,
+        providerId: currentOffer.author.userId,
+      }),
+      remoteStorage.setPostStatus(post.objectId, "signed"),
+      remoteStorage.setOfferStatus(currentOffer.objectId, "accepted"),
+    ]).then(() => {
+      offer.status = "accepted";
+      post.status = "signed";
+      const updatedPosts = requests.map(({ objectId, ...props }) => {
+        if (objectId === post.objectId) {
+          return { ...props, objectId, status: "signed" };
+        }
+
+        return { ...props, objectId };
+      });
+      setRequests(updatedPosts);
+      setIsContractModalVisible(false);
     });
-    console.log(`Metadata creation result: ${JSON.stringify(metadataResult)}`);
-    await remoteStorage.setOfferStatus(currentOffer.objectId, "accepted");
-    setIsContractModalVisible(false);
   };
 
   const closeContractModal = () => {
@@ -113,8 +164,8 @@ export default function MyRequests({ posts }) {
     setIsContractModalVisible(false);
   };
 
-  const onComposeContract = (post, offer) => {
-    console.log(`Compose contract with offer ${JSON.stringify(offer)}`);
+  const onComposeContract = (offer, post) => {
+    console.log(`Compose contract with offer ${JSON.stringify(offer)}; post ${JSON.stringify(post)}`);
     setCurrentOffer(offer);
     setCurrentPost(post);
     setIsContractModalVisible(true);
@@ -123,6 +174,20 @@ export default function MyRequests({ posts }) {
   const onEdit = post => {
     setCurrentPost(post);
     setIsEditModalVisible(true);
+  };
+
+  const onRejectOffer = (offer, post) => {
+    const updatedPosts = requests.map(({ objectId, offers, ...props }) => {
+      const updatedOffers = offers.filter(({ objectId: offerId }) => offerId !== offer.objectId);
+      console.log(`Updated offers after rejecting ${offer.objectId}: ${JSON.stringify(offers)}`);
+      if (objectId === post.objectId) {
+        return { ...props, objectId, offers: updatedOffers };
+      }
+
+      return { ...props, objectId };
+    });
+    setRequests(updatedPosts);
+    remoteStorage.setOfferStatus(offer.objectId, "rejected");
   };
 
   const onDelete = post => {
@@ -134,8 +199,8 @@ export default function MyRequests({ posts }) {
       <List
         itemLayout="vertical"
         size="default"
-        dataSource={posts}
-        renderItem={post => renderItem({ post, currentTheme, onEdit, onDelete, onComposeContract })}
+        dataSource={requests}
+        renderItem={post => renderItem({ post, currentTheme, onEdit, onDelete, onComposeContract, onRejectOffer })}
       />
 
       {currentPost && (
@@ -168,15 +233,6 @@ export default function MyRequests({ posts }) {
           onCancel={closeContractModal}
         />
       )}
-      {/* {currentPost && currentOffer && (
-        <ContractModal
-          title="Make an offer"
-          offer={currentOffer}
-          visible={isContractModalVisible}
-          onOk={createContract(currentPost)}
-          onCancel={closeModal}
-        />
-      )} */}
     </>
   );
 }

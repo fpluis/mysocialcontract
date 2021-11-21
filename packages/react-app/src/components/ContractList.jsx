@@ -28,12 +28,22 @@ export default function ContractList({ contracts = [] }) {
         const checkDeadline = deadlineInSeconds + ONE_DAY_IN_SECONDS;
         console.log(`Deadline in seconds: ${deadlineInSeconds}; now in seconds: ${nowInSeconds}`);
         const status = isSuccessful
-          ? "Successful"
+          ? "successful"
           : deadlineInSeconds > nowInSeconds
-          ? "In Progress"
+          ? "active"
           : checkDeadline > nowInSeconds
-          ? "Finished"
-          : "Failed";
+          ? "finished"
+          : "failed";
+        const statusMessage =
+          status === "successful" ? (
+            <span style={{ color: "#388e3c" }}>Successful</span>
+          ) : status === "active" ? (
+            <span style={{ color: "#388e3c" }}>In progress</span>
+          ) : status === "finished" ? (
+            <span style={{ color: "#388e3c" }}>Finished</span>
+          ) : (
+            <span style={{ color: "#b71c1c" }}>Failed</span>
+          );
         const canWithdraw =
           (status === "Successful" && provider.ethAddress === myEthAddress) ||
           (["Failed", "Finished", "Successful"].includes(status) && owner.ethAddress === myEthAddress);
@@ -111,7 +121,7 @@ export default function ContractList({ contracts = [] }) {
               description={
                 <Col span={24}>
                   <Row>
-                    <h4>Status: {status}</h4>
+                    <h4>Status: {statusMessage}</h4>
                   </Row>
                   {createdAt && (
                     <Row>

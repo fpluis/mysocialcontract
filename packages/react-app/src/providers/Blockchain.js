@@ -32,11 +32,10 @@ export const Blockchain = {
     startDate,
     endDate,
     share,
-    ytChannelId,
-    ytMinViewCount,
-    ytMinSubscriberCount,
+    ytChannelId = "none",
+    ytMinViewCount = "0",
+    ytMinSubscriberCount = "0",
   }) => {
-    console.log(ytMinViewCount);
     const params = {
       owner,
       provider,
@@ -45,9 +44,9 @@ export const Blockchain = {
       startDate,
       endDate,
       share,
-      ytChannelId: ytChannelId == null ? "" : ytChannelId,
-      ytMinViewCount: "0",
-      ytMinSubscriberCount: ytMinSubscriberCount == null ? 0 : ytMinSubscriberCount,
+      ytChannelId,
+      ytMinViewCount,
+      ytMinSubscriberCount,
     };
     console.log(
       `Create Promotion with params ${JSON.stringify(params)}; msgvalue: ${Moralis.Units.ETH(

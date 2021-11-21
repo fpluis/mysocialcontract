@@ -1,16 +1,13 @@
-import { List, Button, DatePicker, Avatar, Descriptions, Tooltip, Space } from "antd";
+import { List, Button, Avatar, Row, Tooltip, Space, Col } from "antd";
 import React from "react";
 import Blockies from "react-blockies";
-import moment from "moment";
 import ReactTimeAgo from "react-time-ago";
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import "./OfferList.css";
-import Conditions from "./Conditions";
+import { Conditions } from "./index";
 
-const { RangePicker } = DatePicker;
-
-export default function OfferList({ offers = [], post, onRejectOffer, onComposeContract }) {
-  console.log(`Render offer list with offers ${JSON.stringify(offers)}`);
+export default function OfferList({ offers, post, onRejectOffer, onComposeContract }) {
+  console.log(`Render offer list; post: ${JSON.stringify(post)}`);
   return (
     <List
       itemLayout="vertical"
@@ -19,24 +16,33 @@ export default function OfferList({ offers = [], post, onRejectOffer, onComposeC
       className="offer-list"
     >
       {offers.map((offer, key) => {
-        const { author: contractor, createdAt, share, deposit, startDate, endDate } = offer;
+        const { author: contractor, createdAt, status } = offer;
+        const statusMessage =
+          status === "active" ? (
+            <span>Pending</span>
+          ) : status === "rejected" ? (
+            <span style={{ color: "#b71c1c" }}>Rejected</span>
+          ) : (
+            <span style={{ color: "#388e3c" }}>Accepted</span>
+          );
         const actions = [
           <Tooltip key="reject" position="top" text="Reject offer">
             <Button
               icon={<CloseOutlined />}
               onClick={() => {
-                onRejectOffer(offer);
+                onRejectOffer(offer, post);
               }}
             />
           </Tooltip>,
         ];
-        if (onComposeContract != null) {
+        if (post != null && onComposeContract != null) {
           actions.unshift(
             <Tooltip key="compose" position="top" text="Compose the contract">
               <Button
                 icon={<FormOutlined />}
                 onClick={() => {
-                  onComposeContract(post, offer);
+                  console.log(`Compose contract with post ${JSON.stringify(post)}`);
+                  onComposeContract(offer, post);
                 }}
               />
             </Tooltip>,
@@ -44,7 +50,7 @@ export default function OfferList({ offers = [], post, onRejectOffer, onComposeC
         }
 
         return (
-          <List.Item key={key} extra={<Space>{actions}</Space>}>
+          <List.Item key={key} extra={post && post.status !== "signed" && <Space>{actions}</Space>}>
             <List.Item.Meta
               avatar={
                 <Avatar
@@ -54,17 +60,21 @@ export default function OfferList({ offers = [], post, onRejectOffer, onComposeC
                 ></Avatar>
               }
               title={contractor.username}
-              description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
+              description={
+                <Col span={24}>
+                  <Row>
+                    <h4 style={{ fontWeight: "bold" }}>Status: {statusMessage}</h4>
+                  </Row>
+                  {createdAt && (
+                    <Row>
+                      <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />
+                    </Row>
+                  )}
+                </Col>
+              }
+              locale="en-US"
             />
-            {/* <Descriptions title={null} bordered layout="horizontal" column={1}>
-              {share && <Descriptions.Item label="Share">{share}%</Descriptions.Item>}
-              {deposit && <Descriptions.Item label="Initial deposit">{deposit}</Descriptions.Item>}
-              {startDate && endDate && (
-                <Descriptions.Item label="Period">
-                  <RangePicker defaultValue={[moment(startDate), moment(endDate)]} disabled />
-                </Descriptions.Item>
-              )}
-            </Descriptions> */}
+
             <Conditions title={null} layout="horizontal" conditions={offer} />
           </List.Item>
         );

@@ -23,7 +23,7 @@ export default function Conditions({
     <Descriptions title={title} bordered column={column} layout={layout}>
       <Descriptions.Item label="Initial deposit">{initialDeposit}</Descriptions.Item>
       <Descriptions.Item label="Provider's share">{`${share}%`}</Descriptions.Item>
-      <Descriptions.Item label="Threshold gains (ETH)">{thresholdETH}</Descriptions.Item>
+      {thresholdETH && <Descriptions.Item label="Threshold gains (ETH)">{thresholdETH}</Descriptions.Item>}
       <Descriptions.Item label="Period">
         <RangePicker defaultValue={[moment(startDate * 1000), moment(endDate * 1000)]} disabled />
       </Descriptions.Item>

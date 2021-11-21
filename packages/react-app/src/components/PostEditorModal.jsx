@@ -30,7 +30,14 @@ export default function PostEditorModal({
           <Input.TextArea rows={16} />
         </Form.Item>
         <Form.Item name="share" label="Provider's share" required={true}>
-          <InputNumber min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
+          <InputNumber
+            // formatter={value => Number(value).toFixed(0)}
+            precision={0}
+            min={0}
+            max={100}
+            placeholder="Between 0 and 100"
+            style={{ width: "100%" }}
+          />
         </Form.Item>
         <Form.Item name="period" label="Period" required={true}>
           <RangePicker />

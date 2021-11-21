@@ -8,54 +8,6 @@ const { abi: PromotionABI } = hardhat_contracts[42].kovan.contracts.Promotion;
 const POST_QUERY_LIMIT = 20;
 
 export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }, Blockchain = null) => {
-  const putPost = ({
-    objectId,
-    title,
-    description,
-    initialDeposit,
-    share,
-    thresholdETH,
-    period,
-    ytChannelId,
-    ytMinViewCount,
-    ytMinSubscriberCount,
-  }) => {
-    console.log(`Creating post; object id: ${objectId}`);
-    // const post = objectId ? Moralis.Object.fromJSON({ objectId }) : new PostObject();
-    const post = new PostObject();
-    if (objectId) {
-      post.set("objectId", objectId);
-    }
-
-    const [start, end] = period;
-    const authorId = Authentication.profile.userId;
-    return post
-      .save({
-        authorId,
-        title,
-        description,
-        initialDeposit,
-        thresholdETH,
-        startDate: start.unix(),
-        endDate: end.unix(),
-        share,
-        ytChannelId,
-        ytMinViewCount,
-        ytMinSubscriberCount,
-      })
-      .then(
-        async post => {
-          console.log(`Post by ${authorId} saved successfully, result`, post);
-          const author = await getProfile(authorId);
-          post.set("author", author);
-          return post;
-        },
-        error => {
-          console.log(`Error saving object,`, error);
-        },
-      );
-  };
-
   const getProfile = async userId => {
     const query = new Moralis.Query(ProfileObject);
     let profile;
@@ -83,10 +35,81 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     return props;
   };
 
-  const getPosts = async (params = {}, page = 0, authorId = null) => {
-    console.log(`Get posts for page ${page} with params ${JSON.stringify(params)}`);
+  const putPost = ({
+    objectId,
+    title,
+    description,
+    initialDeposit,
+    share,
+    thresholdETH,
+    period,
+    ytChannelId,
+    ytMinViewCount,
+    ytMinSubscriberCount,
+  }) => {
+    console.log(`Creating post; object id: ${objectId}`);
+    const post = new PostObject();
+    if (objectId) {
+      post.set("objectId", objectId);
+    }
+
+    const [start, end] = period;
+    const authorId = Authentication.profile.userId;
+    return post
+      .save({
+        status: "active",
+        authorId,
+        title,
+        description,
+        initialDeposit,
+        thresholdETH,
+        startDate: start.unix(),
+        endDate: end.unix(),
+        share,
+        ytChannelId,
+        ytMinViewCount,
+        ytMinSubscriberCount,
+      })
+      .then(
+        async post => {
+          console.log(`Post by ${authorId} saved successfully, result`, post);
+          const author = await getProfile(authorId);
+          post.set("author", author);
+          return post;
+        },
+        error => {
+          console.log(`Error saving object,`, error);
+        },
+      );
+  };
+
+  const setPostStatus = (id, status) => {
+    const post = new PostObject();
+    return post
+      .save({
+        id,
+        status,
+      })
+      .then(
+        post => {
+          console.log(`Post saved successfully, result`, post);
+          return post;
+        },
+        error => {
+          console.log(`Error saving object,`, error);
+        },
+      );
+  };
+
+  const getPosts = async ({ status = null, page = 0, authorId = null }) => {
+    console.log(`Get posts for page ${page} with params status=${status}`);
     const query = new Moralis.Query(PostObject);
     query.limit(POST_QUERY_LIMIT);
+
+    if (status != null) {
+      query.equalTo("status", status);
+    }
+
     if (page > 0) {
       query.skip(page * POST_QUERY_LIMIT);
     }
@@ -183,7 +206,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     console.log(`Get offers with params postIds=${postIds}, authorId=${authorId}`);
     const query = new Moralis.Query(OfferObject);
     query.descending("createdAt");
-    query.notEqualTo("status", "rejected");
     if (postIds) {
       query.containedIn("postId", postIds);
     }
@@ -218,7 +240,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         providerId,
       })
       .then(
-        offer => {
+        async offer => {
           console.log(`Object saved successfully, result`, offer);
           return offer;
         },
@@ -270,8 +292,9 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   return {
-    putPost,
     getUser: getProfile,
+    putPost,
+    setPostStatus,
     getPosts,
     getPost,
     putOffer,
