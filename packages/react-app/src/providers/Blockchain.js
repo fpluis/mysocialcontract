@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo } from "react";
 import Moralis from "moralis";
 import hardhat_contracts from "../contracts/hardhat_contracts.json";
 import { BigNumber } from "@ethersproject/bignumber";
@@ -6,7 +6,7 @@ import { useAuthentication } from ".";
 
 const { abi: PromotionFactoryABI, address: PromotionFactoryAddress } =
   hardhat_contracts[42].kovan.contracts.PromotionFactory;
-const { abi: PromotionABI } = hardhat_contracts[42].kovan.contracts.Promotion;
+const { abi: PromotionABI, address: PromotionAddress } = hardhat_contracts[42].kovan.contracts.Promotion;
 
 const normalizeOnChainValue = (type, value) => {
   switch (type) {
@@ -22,6 +22,7 @@ const normalizeOnChainValue = (type, value) => {
 };
 
 export const Blockchain = {
+  isReady: false,
   Authentication: null,
   web3: null,
   createContract: async ({
@@ -151,6 +152,7 @@ export const BlockchainProvider = ({ children = null }) => {
   useMemo(async () => {
     const web3 = await Moralis.enableWeb3();
     Blockchain.web3 = web3;
+    Blockchain.isReady = true;
   });
   return <BlockchainProviderContext.Provider value={Blockchain}>{children}</BlockchainProviderContext.Provider>;
 };

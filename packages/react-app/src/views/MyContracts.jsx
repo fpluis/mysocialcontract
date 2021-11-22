@@ -1,9 +1,9 @@
 import { List, Button, Avatar, Col, Row, Descriptions, Progress, Divider, Statistic } from "antd";
-import React, { useMemo, useState } from "react";
+import React from "react";
 import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
 import { Conditions } from "../components";
-import { useAuthentication, useBlockchain, useRemoteStorage } from "../providers";
+import { useAuthentication, useBlockchain, useMyContracts } from "../providers";
 // import "./ContractList.css";
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
@@ -27,23 +27,23 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
     ytMinSubscriberCount,
   } = contract;
 
-  console.log(`Render contract ${JSON.stringify(contract)}`);
+  console.log(`Render contract ${contractAddress}`);
 
   const deadlineInSeconds = contract.endDate;
   const nowInSeconds = new Date().getTime() / 1000;
   const gracePeriodEnd = deadlineInSeconds + ONE_DAY_IN_SECONDS;
   const balanceETH = balance / 1000000000000000000;
-  const balancePercent = thresholdETH === 0 ? 100 : Math.min((balance / thresholdETH) * 100, 100);
+  const balancePercent = thresholdETH === 0 || isSuccessful ? 100 : Math.min((balance / thresholdETH) * 100, 100);
   const ytViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((ytViews / ytMinViewCount) * 100, 100);
   const ytSubsPercent = ytMinSubscriberCount === 0 ? 100 : Math.min((ytSubs / ytMinSubscriberCount) * 100, 100);
   const ytLiveViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((liveYtViewCount / ytMinViewCount) * 100, 100);
   const ytLiveSubPercent =
     ytMinSubscriberCount === 0 ? 100 : Math.min((liveYtSubCount / ytMinSubscriberCount) * 100, 100);
-  console.log(
-    `Live yt sub count ${liveYtSubCount}, min sub count ${ytMinSubscriberCount}; div ${
-      liveYtSubCount / ytMinSubscriberCount
-    }; percent: ${ytLiveSubPercent}`,
-  );
+  // console.log(
+  //   `Live yt sub count ${liveYtSubCount}, min sub count ${ytMinSubscriberCount}; div ${
+  //     liveYtSubCount / ytMinSubscriberCount
+  //   }; percent: ${ytLiveSubPercent}`,
+  // );
   const status = isSuccessful
     ? "successful"
     : deadlineInSeconds > nowInSeconds
@@ -184,83 +184,56 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
 
 export default function ContractList() {
   const {
-    user,
     profile: { userId: myUserId, ethAddress: myEthAddress },
   } = useAuthentication();
   const blockchain = useBlockchain();
-  const remoteStorage = useRemoteStorage();
+  const { event: blockchainEvent, setEvent: setBlockchainEvent, contracts, setContracts } = useMyContracts();
 
-  const [contractsIOwn, setContractsIOwn] = useState([]);
-  const [contractsIProvide, setContractsIProvide] = useState([]);
-  // console.log(
-  //   `Render contract list with contracts ${JSON.stringify(contractsIOwn)} + ${JSON.stringify(contractsIProvide)}`,
-  // );
+  // useEffect(() => {
+  //   if (blockchainEvent == null || blockchainEvent.seen === true) {
+  //     return;
+  //   }
 
-  const addBlockchainListeners = (contracts, setContracts, role) =>
-    contracts.map(contract => {
-      const { events: contractEventListener } = blockchain.getContract(contract.contractAddress);
-      contractEventListener.allEvents({}, async function (error, event) {
-        console.log(`Firing event callback`);
-        const { event: name, returnValues } = event;
-        console.log(event);
-        if (name === "OnFulfill") {
-          const { _ytSubs, _ytViews } = returnValues;
-          contract.ytSubs = _ytSubs;
-          contract.ytViews = _ytViews;
-          setContracts([...contracts]);
-        }
+  //   const { name, address, from } = blockchainEvent;
+  //   const contract = contracts.find(({ contractAddress }) => contractAddress === address);
 
-        if (name === "OnSuccess") {
-          contract.isSuccessful = true;
-          setContracts([...contracts]);
-        }
+  //   if (name === "PromotionCreated") {
+  //     console.log(`Created promotion`);
+  //     return;
+  //   }
 
-        if (name === "Withdraw") {
-          const { amount } = returnValues;
-          contract.balance -= Number(amount);
-          if (role === "owner") {
-            contract.isOwnerPaid = true;
-          } else {
-            contract.isProviderPaid = true;
-          }
+  //   if (name === "OnFulfill") {
+  //     const { ytSubs, ytViews } = blockchainEvent;
+  //     contract.ytSubs = ytSubs;
+  //     contract.ytViews = ytViews;
+  //   }
 
-          setContracts([...contracts]);
-          console.log(`Amount withdrawn: ${amount}; new balance: ${contract.balance}`);
-        }
+  //   if (name === "OnSuccess") {
+  //     contract.isSuccessful = true;
+  //   }
 
-        console.log(error);
-      });
-      // contract.listener = contractEventListener;
-      return contract;
-    });
+  //   if (name === "Withdraw") {
+  //     const { amount } = blockchainEvent;
+  //     contract.balance -= Number(amount);
+  //     console.log(`Handling withdraw event; Contract owner: ${contract.ownerId}}; from: ${from}`);
+  //     if (contract.ownerId === from) {
+  //       contract.isOwnerPaid = true;
+  //     } else {
+  //       contract.isProviderPaid = true;
+  //     }
 
-  useMemo(async () => {
-    if (user.authenticated() && blockchain.web3) {
-      console.log(`LOAD CONTRACTS`);
-      const [contractsIOwn, contractsIProvide] = await Promise.all([
-        remoteStorage
-          .getContracts({ ownerId: myUserId })
-          .then(contracts => addBlockchainListeners(contracts, setContractsIOwn, "owner")),
-        remoteStorage
-          .getContracts({ providerId: myUserId })
-          .then(contracts => addBlockchainListeners(contracts, setContractsIProvide, "provider")),
-      ]);
-      setContractsIOwn(contractsIOwn);
-      setContractsIProvide(contractsIProvide);
-      console.log(
-        `Contracts I (${myUserId}) own: ${JSON.stringify(contractsIOwn)}; provide: ${JSON.stringify(contractsIOwn)}`,
-      );
-    }
-  }, [user, blockchain.web3]);
+  //     console.log(`Amount withdrawn: ${amount}; new balance: ${contract.balance}`);
+  //   }
+
+  //   // Force contract rerender
+  //   setContracts([...contracts]);
+  //   setBlockchainEvent({ ...blockchainEvent, seen: true });
+  // }, [blockchainEvent]);
 
   const withdraw = async contract => {
     const result = await blockchain.withdraw(contract.contractAddress);
     console.log(`Result after withdrawing: ${JSON.stringify(result)}`);
   };
-
-  // const getContractListener = contractAddress => {
-  //   return blockchain.getContract(contractAddress);
-  // };
 
   const checkConditions = contract => {
     return blockchain.checkConditions(contract);
@@ -273,6 +246,11 @@ export default function ContractList() {
     className: "contract-list",
   };
 
+  const contractsIOwn = contracts.filter(contract => contract.ownerId === myUserId);
+  const contractsIProvide = contracts.filter(contract => contract.providerId === myUserId);
+  console.log(
+    `Contracts I (${myUserId}) own: ${JSON.stringify(contractsIOwn)}; provide: ${JSON.stringify(contractsIOwn)}`,
+  );
   return (
     <>
       <h1 style={{ marginLeft: "16px", marginTop: "16px" }}>Contracts I created</h1>

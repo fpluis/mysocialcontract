@@ -1,10 +1,8 @@
 import Moralis from "moralis";
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext } from "react";
 import { useAuthentication, useBlockchain, useLocalStorage } from ".";
 import { ProfileObject, OfferObject, PostObject, ContractObject } from "../classes";
-import hardhat_contracts from "../contracts/hardhat_contracts.json";
 
-const { abi: PromotionABI } = hardhat_contracts[42].kovan.contracts.Promotion;
 const POST_QUERY_LIMIT = 20;
 
 export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }, Blockchain = null) => {
@@ -250,20 +248,38 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       );
   };
 
+  const queryByOwner = ownerId => {
+    const query = new Moralis.Query(ContractObject);
+    query.equalTo("ownerId", ownerId);
+    return query;
+  };
+
+  const queryByProvider = providerId => {
+    const query = new Moralis.Query(ContractObject);
+    query.equalTo("providerId", providerId);
+    return query;
+  };
+
   const getContracts = async ({ ownerId, providerId }) => {
     console.log(`Get contracts with params ownerId=${ownerId}, providerId=${providerId}`);
-    const query = new Moralis.Query(ContractObject);
+    if (!ownerId && !providerId) {
+      return [];
+    }
+
+    let query;
+    if (ownerId && !providerId) {
+      query = queryByOwner(ownerId);
+    }
+
+    if (providerId && !ownerId) {
+      query = queryByProvider(providerId);
+    }
+
+    if (providerId && ownerId) {
+      query = Moralis.Query.or(queryByOwner(ownerId), queryByProvider(providerId));
+    }
+
     query.descending("createdAt");
-    if (ownerId) {
-      console.log(`Set owner id`);
-      query.equalTo("ownerId", ownerId);
-    }
-
-    if (providerId) {
-      console.log(`Set provider id`);
-      query.equalTo("providerId", providerId);
-    }
-
     const contracts = await query.find();
     console.log(`Contracts with ownerId=${ownerId}, providerId=${providerId}: ${JSON.stringify(contracts)}`);
     const hydratedContracts = await Promise.all(

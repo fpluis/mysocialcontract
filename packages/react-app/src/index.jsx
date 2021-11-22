@@ -7,6 +7,7 @@ import {
   BlockchainProvider,
   AuthenticationProvider,
   RemoteStorageProvider,
+  MyContractProvider,
 } from "./providers";
 import App from "./App";
 import "./index.css";
@@ -25,11 +26,13 @@ ReactDOM.render(
       <AuthenticationProvider>
         <BlockchainProvider>
           <RemoteStorageProvider>
-            <HashRouter basename={"/"}>
-              <MessagingProvider>
-                <App />
-              </MessagingProvider>
-            </HashRouter>
+            <MyContractProvider>
+              <HashRouter basename={"/"}>
+                <MessagingProvider>
+                  <App />
+                </MessagingProvider>
+              </HashRouter>
+            </MyContractProvider>
           </RemoteStorageProvider>
         </BlockchainProvider>
       </AuthenticationProvider>

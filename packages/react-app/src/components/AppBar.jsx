@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Avatar, Button, Row, Col } from "antd";
+import { Avatar, Button, Row, Col, Badge } from "antd";
 import { MessageOutlined, HomeOutlined, FileTextOutlined, LoginOutlined } from "@ant-design/icons";
-import { useAuthentication } from "../providers";
+import { useAuthentication, useMyContracts } from "../providers";
 import Blockies from "react-blockies";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import "./AppBar.css";
@@ -10,9 +10,28 @@ import "./AppBar.css";
 export default function AppBar() {
   const { user, profile, login } = useAuthentication();
   const { currentTheme } = useThemeSwitcher();
+  const { event: contractEvent, setEvent: setContractEvent } = useMyContracts();
+  const [seenContract, setSeenContract] = useState(false);
+  const [showContractNotification, setShowContractNotification] = useState(false);
   const { ethAddress = "", username = "", profilePicture } = profile;
   console.log(`Profile picture ${JSON.stringify(profilePicture)}; profile ${JSON.stringify(profile)}`);
   const profilePictureUrl = profilePicture ? profilePicture.url : null;
+
+  const [route, setRoute] = useState("/");
+
+  useEffect(() => {
+    console.log(`Window route ${window.location.hash.replace(/^#/, "")}`);
+    setRoute(window.location.hash.replace(/^#/, ""));
+  }, [setRoute, window.location.hash]);
+
+  useEffect(() => {
+    console.log(`Run effect with contract seen? ${contractEvent.seen}; local seen ${seenContract}; route: ${route}`);
+    if (!contractEvent.seen && !seenContract && route !== "/posts/" && !route.startsWith("/me/")) {
+      console.log(`Show appbar contract notification`);
+      setShowContractNotification(true);
+      setSeenContract(false);
+    }
+  }, [contractEvent, route]);
 
   const backgroundColor = currentTheme === "light" ? "white" : "#222222";
 
@@ -26,7 +45,19 @@ export default function AppBar() {
         </Col>
         <Col span={6}>
           <Link to={`/posts/`}>
-            <Button icon={<FileTextOutlined className={`icon ${currentTheme}`} />} />
+            <Badge dot={showContractNotification}>
+              <Button
+                icon={
+                  <FileTextOutlined
+                    className={`icon ${currentTheme}`}
+                    onClick={() => {
+                      setSeenContract(true);
+                      setShowContractNotification(false);
+                    }}
+                  />
+                }
+              ></Button>
+            </Badge>
           </Link>
         </Col>
         <Col span={6}>

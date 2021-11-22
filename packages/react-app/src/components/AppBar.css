@@ -12,7 +12,7 @@
   vertical-align: middle;
 }
 
-.app-bar-container > .ant-col > a > button {
+.app-bar-container > .ant-col > a button {
   border: none;
 }
 

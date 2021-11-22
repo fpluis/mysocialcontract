@@ -1,7 +1,7 @@
-import { Row, Col, List, Avatar, Menu, Button, message, Divider } from "antd";
+import { Row, Col, List, Avatar, Menu, Button, message, Divider, Badge } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, Switch, Route } from "react-router-dom";
-import { useAuthentication, useRemoteStorage } from "../providers";
+import { useAuthentication, useMyContracts, useRemoteStorage } from "../providers";
 import Blockies from "react-blockies";
 import { PostDetail, PostEditorModal, OfferList } from "../components";
 import { MyContracts, MyRequests } from "./index";
@@ -14,6 +14,8 @@ export default function PostsView() {
   console.log(`My profile: ${JSON.stringify(myProfile)}`);
   const remoteStorage = useRemoteStorage();
   const [isPostModalVisible, setCreatePostModalVisible] = useState(false);
+  const [showContractNotification, setShowContractNotification] = useState(false);
+  const { event: contractEvent, setEvent: setContractEvent } = useMyContracts();
   const [posts, setPosts] = useState([]);
   const [params, setParams] = useState({});
   const [page, setPage] = useState(0);
@@ -34,6 +36,14 @@ export default function PostsView() {
 
   // const { currentTheme } = useThemeSwitcher();
   // const inverseThemeColor = currentTheme === "light" ? "#222222" : "white";
+
+  useEffect(() => {
+    console.log(`Run effect with contract seen? ${contractEvent.seen}; route: ${route}`);
+    if (!contractEvent.seen && route !== "/me/contracts") {
+      console.log(`Show contract notification on menu`);
+      setShowContractNotification(true);
+    }
+  }, [contractEvent, route]);
 
   useMemo(async () => {
     const posts = await remoteStorage.getPosts({ ...params, status: "active", page });
@@ -89,10 +99,12 @@ export default function PostsView() {
           <Link
             onClick={() => {
               setRoute("/me/contracts");
+              setContractEvent({ seen: true });
+              setShowContractNotification(false);
             }}
             to="/me/contracts"
           >
-            My contracts
+            <Badge dot={showContractNotification}>My contracts</Badge>
           </Link>
         </Menu.Item>
         <Button
