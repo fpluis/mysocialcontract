@@ -42,7 +42,7 @@ const getYoutubeChannelId = async (youtubeApiKey, name) => {
   return channelId;
 };
 
-Moralis.Cloud.define("getYoutubeStatistics", async () => {
+Moralis.Cloud.define("getYoutubeStatistics", async (request) => {
   const {
     params: { channelId },
   } = request;
@@ -55,7 +55,7 @@ Moralis.Cloud.define("getYoutubeStatistics", async () => {
   return getYoutubeStatistics(youtubeApiKey, channelId);
 });
 
-Moralis.Cloud.define("getYoutubeChannelId", async () => {
+Moralis.Cloud.define("getYoutubeChannelId", async (request) => {
   const {
     params: { username },
   } = request;
