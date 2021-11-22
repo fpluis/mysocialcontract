@@ -28,11 +28,11 @@ export const Blockchain = {
     owner,
     provider,
     initialDeposit,
-    thresholdETH,
+    thresholdETH = 0,
     startDate,
     endDate,
     share,
-    ytChannelId = "none",
+    ytChannelId = "-",
     ytMinViewCount = "0",
     ytMinSubscriberCount = "0",
   }) => {
@@ -87,11 +87,10 @@ export const Blockchain = {
       { type: "number", name: "ytSubs" },
       { type: "number", name: "ytMinViewCount" },
       { type: "number", name: "ytMinSubscriberCount" },
-      // { type: "string", name: "provider" },
-      // { type: "string", name: "owner" },
       { type: "string", name: "ytChannelId" },
       { type: "bool", name: "isSuccessful" },
       { type: "bool", name: "isProviderPaid" },
+      { type: "bool", name: "isOwnerPaid" },
     ];
     const values = await Promise.all(
       onChainProps.map(({ name }) => {
@@ -99,25 +98,39 @@ export const Blockchain = {
         return contract.methods[name]().call();
       }),
     );
-    return values.reduce((props, rawValue, index) => {
-      const { type, name } = onChainProps[index];
-      props[name] = normalizeOnChainValue(type, rawValue);
-      return props;
-    }, {});
+    const balance = await Moralis.Web3API.account
+      .getNativeBalance({
+        chain: "kovan",
+        address: contractAddress,
+      })
+      .then(({ balance }) => Number(balance));
+    return values.reduce(
+      (props, rawValue, index) => {
+        const { type, name } = onChainProps[index];
+        props[name] = normalizeOnChainValue(type, rawValue);
+        return props;
+      },
+      { balance },
+    );
   },
-  checkConditions: async contractAddress => {
-    const linkTransferResult = await Moralis.transfer({
-      type: "erc20",
-      amount: Moralis.Units.Token("1", "18"),
-      receiver: contractAddress,
-      contractAddress: "0xa36085F69e2889c224210F603D836748e7dC0088",
-    });
-    console.log(`0.1 LINK Transfer result: ${JSON.stringify(linkTransferResult)}`);
-    const contract = new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
-    console.log(contract);
+  checkConditions: async contract => {
+    const { contractAddress } = contract;
+    if (contract.ytChannelId !== "-") {
+      const linkTransferResult = await Moralis.transfer({
+        type: "erc20",
+        amount: Moralis.Units.Token("1", "18"),
+        receiver: contractAddress,
+        contractAddress: "0xa36085F69e2889c224210F603D836748e7dC0088",
+      });
+      console.log(`0.1 LINK Transfer result: ${JSON.stringify(linkTransferResult)}`);
+    }
+
+    const {
+      methods: { checkConditions },
+    } = new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
     const ethAddress = Blockchain.Authentication.user.get("ethAddress");
     console.log(`My address ${ethAddress} user:`, Blockchain.Authentication.user);
-    return contract.methods.checkConditions().send({ from: ethAddress });
+    return checkConditions().send({ from: ethAddress });
   },
   withdraw: async contractAddress => {
     const withdrawResult = await Moralis.executeFunction({

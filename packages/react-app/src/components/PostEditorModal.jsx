@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Form, DatePicker, InputNumber, Input, Modal } from "antd";
+import { Button, Form, DatePicker, InputNumber, Input, Modal, message } from "antd";
 
 const { RangePicker } = DatePicker;
 
@@ -23,26 +23,64 @@ export default function PostEditorModal({
         wrapperCol={{ span: 14 }}
         onFinish={onOk}
       >
-        <Form.Item name="title" label="Title" required={true}>
+        <Form.Item
+          name="title"
+          label="Title"
+          rules={[
+            {
+              required: true,
+              message: "Please add a title",
+            },
+          ]}
+        >
           <Input />
         </Form.Item>
-        <Form.Item name="description" label="Description">
+        <Form.Item
+          name="description"
+          label="Description"
+          rules={[
+            {
+              required: true,
+              message: "Please describe what you are looking for",
+            },
+          ]}
+        >
           <Input.TextArea rows={16} />
         </Form.Item>
-        <Form.Item name="share" label="Provider's share" required={true}>
-          <InputNumber
-            // formatter={value => Number(value).toFixed(0)}
-            precision={0}
-            min={0}
-            max={100}
-            placeholder="Between 0 and 100"
-            style={{ width: "100%" }}
-          />
+        <Form.Item
+          name="share"
+          label="Provider's share (%)"
+          rules={[
+            {
+              required: true,
+              message: "Please specify the provider's share i.e. 20 = 20%",
+            },
+          ]}
+        >
+          <InputNumber precision={0} min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="period" label="Period" required={true}>
+        <Form.Item
+          name="period"
+          label="Period"
+          rules={[
+            {
+              required: true,
+              message: "Please specify a valid period",
+            },
+          ]}
+        >
           <RangePicker />
         </Form.Item>
-        <Form.Item name="initialDeposit" label="Initial deposit" required={true}>
+        <Form.Item
+          name="initialDeposit"
+          label="Initial deposit"
+          rules={[
+            {
+              required: true,
+              message: "Please specify the initial amount of ETH you will deposit when you create the contract",
+            },
+          ]}
+        >
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item name="thresholdETH" label="Threshold funds">

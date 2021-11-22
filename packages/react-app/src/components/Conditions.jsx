@@ -27,7 +27,7 @@ export default function Conditions({
       <Descriptions.Item label="Period">
         <RangePicker defaultValue={[moment(startDate * 1000), moment(endDate * 1000)]} disabled />
       </Descriptions.Item>
-      {ytChannelId && (
+      {ytChannelId && ytChannelId !== "-" && (
         <Descriptions.Item label="Youtube Channel Id">
           {ytChannelId} (<a href={`https://www.youtube.com/channel/${ytChannelId}`}>Link to the channel</a>)
         </Descriptions.Item>

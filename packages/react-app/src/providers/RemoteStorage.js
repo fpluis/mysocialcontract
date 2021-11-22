@@ -280,6 +280,22 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
           });
         }
 
+        const channelId = contract.get("ytChannelId");
+        if (channelId !== "-") {
+          console.log(`Get statistics for ${channelId}`);
+          try {
+            const statistics = await Moralis.Cloud.run("getYoutubeStatistics", {
+              channelId,
+            });
+            console.log(`YT Statistics for contract channel ${channelId}: ${JSON.stringify(statistics)}`);
+            const { viewCount, subscriberCount } = statistics;
+            contract.set("liveYtViewCount", viewCount);
+            contract.set("liveYtSubCount", subscriberCount);
+          } catch (error) {
+            console.log(`Error getting channel stats for ${channelId}:`, error);
+          }
+        }
+
         return contract.toJSON();
       }),
     );

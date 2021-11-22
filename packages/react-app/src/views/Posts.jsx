@@ -3,7 +3,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, Switch, Route } from "react-router-dom";
 import { useAuthentication, useRemoteStorage } from "../providers";
 import Blockies from "react-blockies";
-import { PostDetail, MyRequests, PostEditorModal, OfferList, ContractList } from "../components";
+import { PostDetail, PostEditorModal, OfferList } from "../components";
+import { MyContracts, MyRequests } from "./index";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import ReactTimeAgo from "react-time-ago";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
@@ -18,8 +19,6 @@ export default function PostsView() {
   const [page, setPage] = useState(0);
   const [route, setRoute] = useState("/posts/");
   const [myOffers, setMyOffers] = useState([]);
-  const [contractsIOwn, setContractsIOwn] = useState([]);
-  const [contractsIProvide, setContractsIProvide] = useState([]);
 
   const createPost = async props => {
     console.log(`Props: ${JSON.stringify(props)}`);
@@ -48,18 +47,6 @@ export default function PostsView() {
         const offers = await remoteStorage.getOffers({ authorId: myProfile.userId });
         setMyOffers(offers);
         console.log(`My (${myProfile.userId}) offers: ${JSON.stringify(offers)}`);
-      }
-
-      if (route === "/me/contracts" && contractsIOwn.length === 0) {
-        const contractsIOwn = await remoteStorage.getContracts({ ownerId: myProfile.userId });
-        setContractsIOwn(contractsIOwn);
-        console.log(`Contracts I (${myProfile.userId}) own: ${JSON.stringify(contractsIOwn)}`);
-      }
-
-      if (route === "/me/contracts" && contractsIProvide.length === 0) {
-        const contractsIProvide = await remoteStorage.getContracts({ providerId: myProfile.userId });
-        setContractsIProvide(contractsIProvide);
-        console.log(`Contracts I (${myProfile.userId}) provider: ${JSON.stringify(contractsIOwn)}`);
       }
     }
   }, [route, remoteStorage.web3Ready, myProfile]);
@@ -141,11 +128,7 @@ export default function PostsView() {
         </Route>
         <Route path="/me/contracts">
           <Col span={24}>
-            <h1>Contracts I created</h1>
-            <ContractList contracts={contractsIOwn} />
-            <Divider type="horizontal" />
-            <h1>Contracts where I provide</h1>
-            <ContractList contracts={contractsIProvide} />
+            <MyContracts />
           </Col>
         </Route>
         <Route path="/posts/:id?">

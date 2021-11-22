@@ -4,7 +4,7 @@ import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useBlockchain, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import Blockies from "react-blockies";
-import { OfferList, PostEditorModal, Description, Conditions } from "./index";
+import { OfferList, PostEditorModal, Description, Conditions } from "../components/index";
 import { CloseOutlined, EditOutlined } from "@ant-design/icons";
 import moment from "moment";
 
@@ -12,26 +12,7 @@ const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
   const { ytChannelId } = post;
   return (
     <Modal title={title} visible={visible} onOk={onOk} onCancel={onCancel}>
-      {/* <Descriptions title={null} bordered layout="vertical" column={1}>
-        {initialDeposit && <Descriptions.Item label="Initial deposit">{initialDeposit} ETH</Descriptions.Item>}
-        {thresholdETH && <Descriptions.Item label="Threshold ETH">{thresholdETH} ETH</Descriptions.Item>}
-        {share && <Descriptions.Item label="Share">{share}%</Descriptions.Item>}
-        {startDate && endDate && (
-          <Descriptions.Item label="Period">
-            <RangePicker defaultValue={[moment(startDate), moment(endDate)]} disabled />
-          </Descriptions.Item>
-        )}
-        {ytChannelId && (
-          <Descriptions.Item label="Youtube Channel Id">
-            {ytChannelId} (<a href={`https://www.youtube.com/channel/${ytChannelId}`}>Link to the channel</a>)
-          </Descriptions.Item>
-        )}
-        {ytMinViewCount && <Descriptions.Item label="Youtube Min Views">{ytMinViewCount} views</Descriptions.Item>}
-        {ytMinSubscriberCount && (
-          <Descriptions.Item label="Youtube Min Subscribers">{ytMinSubscriberCount} subscribers</Descriptions.Item>
-        )}
-      </Descriptions> */}
-      <Conditions title={null} layout="vertical" conditions={{ ...offer, ytChannelId }} />
+      <Conditions title={null} layout="horizontal" conditions={{ ...offer, ytChannelId }} />
     </Modal>
   );
 };
