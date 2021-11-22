@@ -8,6 +8,8 @@ contract Promotion is ChainlinkClient {
     using Chainlink for Chainlink.Request;
 
     event OnFulfill(uint256 _ytViews, uint256 _ytSubs);
+    event OnSuccess();
+    event Withdraw(uint256 amount);
 
     address private oracle;
     bytes32 private jobId;
@@ -27,6 +29,7 @@ contract Promotion is ChainlinkClient {
     string public ytChannelId;
     bool public isSuccessful;
     bool public isProviderPaid;
+    bool public isOwnerPaid;
 
     function initialize(
         address _owner,
@@ -59,6 +62,7 @@ contract Promotion is ChainlinkClient {
         endDate = _endDate * 1 seconds;
         share = _share;
         isProviderPaid = false;
+        isOwnerPaid = false;
         isSuccessful = false;
         ytChannelId = _ytChannelId;
         ytViews = 0;
@@ -74,63 +78,76 @@ contract Promotion is ChainlinkClient {
             msg.sender == provider || msg.sender == owner,
             "Only owner and provider can access the funds"
         );
-        require(
-            msg.sender == owner || isProviderPaid == false,
-            "Provider has already withdrawn their cut."
-        );
-        require(block.timestamp > endDate, "Deadline has not passed yet.");
         uint256 balance = address(this).balance;
-        require(balance > thresholdETH, "Not enough funds have been deposited");
-        uint256 amount = balance * (share / 100);
-        payable(msg.sender).transfer(amount);
-        balance = balance - amount;
-        if (msg.sender == provider) {
+        uint256 gracePeriodEnd = endDate + 24 * 60 * 60 seconds;
+        uint256 userShare = share;
+        if (msg.sender == owner) {
+            userShare = 100 - share;
+            if (isSuccessful == false) {
+                require(
+                    block.timestamp > gracePeriodEnd,
+                    "Owners can only withdraw from failed contracts after the grace period is over"
+                );
+                // If the contract fails, the owner gets all the funds
+                userShare = 100;
+            }
+            require(
+                isOwnerPaid == false,
+                "Owners can only withdraw their share once"
+            );
+            if (isProviderPaid == true) {
+                userShare = 100;
+            }
+            isOwnerPaid = true;
+        } else {
+            require(
+                isSuccessful == true,
+                "Providers can only withdraw if the contract is successful"
+            );
+            require(
+                isProviderPaid == false,
+                "Providers can only withdraw their share once"
+            );
+            if (isOwnerPaid == true) {
+                userShare = 100;
+            }
             isProviderPaid = true;
         }
-    }
 
-    function stringToBytes32(string memory source)
-        private
-        pure
-        returns (bytes32 result)
-    {
-        bytes memory tempEmptyStringTest = bytes(source);
-        if (tempEmptyStringTest.length == 0) {
-            return 0x0;
-        }
-
-        assembly {
-            // solhint-disable-line no-inline-assembly
-            result := mload(add(source, 32))
-        }
+        // If the operation userShare / 100 is in parentheses,
+        // the result will be a float, cast to uint256 and thus become 0
+        uint256 amount = (balance * userShare) / 100;
+        emit Withdraw(amount);
+        payable(provider).transfer(amount);
     }
 
     function checkConditions() external {
-        require(
-            msg.sender == provider || msg.sender == owner,
-            "Only owner and provider can make this check"
-        );
-        // require(block.timestamp > endDate, "Deadline has not passed yet.");
+        if (
+            keccak256(abi.encodePacked(ytChannelId)) !=
+            keccak256(abi.encodePacked("-"))
+        ) {
+            Chainlink.Request memory req = buildChainlinkRequest(
+                "7ab68903a4bd49168f67a1bdb727c1f0",
+                address(this),
+                this.fulfill.selector
+            );
+            req.add("ytChannelId", ytChannelId);
+            requestOracleData(req, 1 * LINK_DIVISIBILITY);
+        } else {
+            checkIsSuccessful();
+        }
+    }
 
-        Chainlink.Request memory req = buildChainlinkRequest(
-            "7ab68903a4bd49168f67a1bdb727c1f0",
-            address(this),
-            this.fulfill.selector
-        );
-        req.add("ytChannelId", "UCfpnY5NnBl-8L7SvICuYkYQ");
-        requestOracleData(req, 1 * LINK_DIVISIBILITY);
-        // setPublicChainlinkToken();
-        // Chainlink.Request memory req = buildChainlinkRequest(
-        //     stringToBytes32("7ab68903a4bd49168f67a1bdb727c1f0"),
-        //     address(this),
-        //     this.fulfill.selector
-        // );
-        // req.add("ytChannelId", "UCfpnY5NnBl-8L7SvICuYkYQ");
-        // sendChainlinkRequestTo(
-        //     0x2Db11F9E1d0a1cDc4e3F4C75B4c14f4a4a1a3518,
-        //     req,
-        //     1 * LINK_DIVISIBILITY
-        // );
+    function checkIsSuccessful() internal {
+        uint256 balance = address(this).balance;
+        if (
+            (balance >= thresholdETH &&
+                (ytMinViewCount == 0 || ytViews > ytMinViewCount)) ||
+            (ytMinSubscriberCount == 0 || ytSubs > ytMinSubscriberCount)
+        ) {
+            isSuccessful = true;
+            emit OnSuccess();
+        }
     }
 
     function fulfill(
@@ -141,19 +158,6 @@ contract Promotion is ChainlinkClient {
         emit OnFulfill(_ytViews, _ytSubs);
         ytViews = _ytViews;
         ytSubs = _ytSubs;
-    }
-
-    function checkIsSuccessful() external returns (bool allChecksPass) {
-        allChecksPass = true;
-        if (ytMinViewCount > 0 && ytViews < ytMinViewCount) {
-            allChecksPass = false;
-        }
-
-        if (ytMinSubscriberCount > 0 && ytSubs < ytMinSubscriberCount) {
-            allChecksPass = false;
-        }
-
-        isSuccessful = allChecksPass;
-        return allChecksPass;
+        checkIsSuccessful();
     }
 }
