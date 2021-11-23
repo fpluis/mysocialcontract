@@ -1,6 +1,6 @@
 import { Row, Col, List, Avatar, Menu, Button, message, Divider, Badge } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, Switch, Route } from "react-router-dom";
+import { Link, Switch, Route, useLocation } from "react-router-dom";
 import { useAuthentication, useMyContracts, useRemoteStorage } from "../providers";
 import Blockies from "react-blockies";
 import { PostDetail, PostEditorModal, OfferList } from "../components";
@@ -10,10 +10,11 @@ import ReactTimeAgo from "react-time-ago";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
 
 export default function PostsView() {
+  const location = useLocation();
   const { profile: myProfile } = useAuthentication();
-  console.log(`My profile: ${JSON.stringify(myProfile)}`);
+  console.log(`My profile: ${JSON.stringify(myProfile)}; Location: ${JSON.stringify(location)}`);
   const remoteStorage = useRemoteStorage();
-  const [isPostModalVisible, setCreatePostModalVisible] = useState(false);
+  const [isPostModalVisible, setCreatePostModalVisible] = useState(location.search === "?create");
   const [showContractNotification, setShowContractNotification] = useState(false);
   const { event: contractEvent, setEvent: setContractEvent } = useMyContracts();
   const [posts, setPosts] = useState([]);

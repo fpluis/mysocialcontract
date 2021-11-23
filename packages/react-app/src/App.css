@@ -47,6 +47,10 @@
   .ant-modal {
     width: 800px !important;
   }
+
+  .instructions-list {
+    width: 100%;
+  }
 }
 
 @media (max-width: 1430px) {
@@ -56,5 +60,9 @@
 
   .ant-modal {
     width: 80% !important;
+  }
+
+  .instructions-list {
+    width: 80%;
   }
 }
