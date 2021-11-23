@@ -40,6 +40,47 @@ button {
   border-bottom: none !important;
 }
 
+.chat-box.dark .rce-citem {
+  background-color: #212121;
+}
+
+/* Works on Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: white rgb(33, 33, 33);
+}
+
+/* Works on Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 16px;
+}
+
+.dark::-webkit-scrollbar-track {
+  background: rgb(33, 33, 33);
+}
+
+*::-webkit-scrollbar-track {
+  background-color: white;
+}
+
+.dark::-webkit-scrollbar-thumb {
+  background-color: white;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(33, 33, 33);
+  border-radius: 10px;
+  border: 3px solid white;
+}
+
+.chat-box.dark > .ant-col > .rce-sbar div {
+  color: white;
+}
+
+.chat-box.dark .rce-container-mbox {
+  color: black;
+}
+
 .rce-container-clist {
   width: 100%;
 }

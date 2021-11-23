@@ -5,10 +5,10 @@ import { useAuthentication, useMessaging } from "../providers";
 import "react-chat-elements/dist/main.css";
 import { ChatList, MessageList, Input, Button, SideBar } from "react-chat-elements";
 import { Row, Col, Empty } from "antd";
-
-// import { useThemeSwitcher } from "react-css-theme-switcher";
+import { useThemeSwitcher } from "react-css-theme-switcher";
 
 export default function ChatView() {
+  const { currentTheme } = useThemeSwitcher();
   const { id: destinataryId } = useParams();
   const history = useHistory();
   const location = useLocation();
@@ -94,7 +94,7 @@ export default function ChatView() {
     id: message.objectId,
     forwarded: false,
     removeButton: true,
-    theme: "white",
+    theme: currentTheme === "light" ? "white" : "dark",
     view: "list",
     type: "text",
     position: message.source === myUserId ? "right" : "left",
@@ -105,7 +105,7 @@ export default function ChatView() {
   console.log(`Message list: ${JSON.stringify(messageList)}`);
 
   return (
-    <Row className="chat-box">
+    <Row className={`chat-box ${currentTheme}`}>
       <Col span={8}>
         <SideBar
           top={
