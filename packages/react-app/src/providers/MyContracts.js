@@ -20,7 +20,6 @@ export const MyContractProvider = ({ children = null }) => {
   const blockchain = useBlockchain();
   const [hasLoaded, setHasLoaded] = useState(false);
   const remoteStorage = useRemoteStorage();
-  const [promotionFactoryEmitter, setPromotionFactoryEmitter] = useState();
   const [event, setEvent] = useState({ seen: true });
   const [eventEmitters, setEventEmitters] = useState([]);
   const [contracts, setContracts] = useState([]);
@@ -37,27 +36,15 @@ export const MyContractProvider = ({ children = null }) => {
       setHasLoaded(true);
       const contracts = await remoteStorage.getContracts({ ownerId: myUserId, providerId: myUserId });
       setContracts(contracts);
+      const subscription = await remoteStorage.subscribeToContracts(myUserId);
+      subscription.on("create", async contract => {
+        console.log(`Contract created: ${JSON.stringify(contract.toJSON())}`);
+        const hydrated = await remoteStorage.hydrateContract(contract);
+        setContracts(currentContracts => [hydrated, ...currentContracts]);
+        setEvent({ seen: false, name: "PromotionCreated", contractAddress: hydrated.contractAddress });
+      });
     }
   }, [user, blockchain.isReady]);
-
-  useEffect(() => {
-    if (blockchain.isReady && promotionFactoryEmitter == null) {
-      const { events: promotionFactoryListener } = new blockchain.web3.eth.Contract(
-        PromotionFactoryABI,
-        PromotionFactoryAddress,
-      );
-      const emitter = promotionFactoryListener.allEvents({}, async function (error, event) {
-        console.log(`Promotion factory event: `, event);
-        const { event: name, from, returnValues, address } = event;
-        const eventProps = { name, address, from, seen: false };
-        if (name === "PromotionCreated") {
-          const { newPromotionAddress: contractAddress } = returnValues;
-          setEvent({ ...eventProps, contractAddress });
-        }
-      });
-      setPromotionFactoryEmitter(emitter);
-    }
-  }, [blockchain.isReady]);
 
   useEffect(() => {
     if (!blockchain.isReady) {

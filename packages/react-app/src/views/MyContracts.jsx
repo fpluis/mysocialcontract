@@ -1,5 +1,5 @@
 import { List, Button, Avatar, Col, Row, Descriptions, Progress, Divider, Statistic } from "antd";
-import React from "react";
+import React, { useEffect } from "react";
 import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
 import { Conditions } from "../components";
@@ -126,14 +126,14 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
       </div>
 
       <Conditions title={null} layout="horizontal" conditions={contract} />
-      <Descriptions style={{ marginTop: "32px" }} title="Progress" bordered column={1} layout={"horizontal"}>
+      <Descriptions style={{ marginTop: "32px" }} title="Live progress" bordered column={1} layout={"horizontal"}>
         {ytMinViewCount && (
-          <Descriptions.Item label={<Statistic title="Youtube live views" value={liveYtViewCount} precision={0} />}>
+          <Descriptions.Item label={<Statistic title="Youtube views" value={liveYtViewCount} precision={0} />}>
             <Progress percent={ytLiveViewsPercent}></Progress>
           </Descriptions.Item>
         )}
         {ytMinSubscriberCount && (
-          <Descriptions.Item label={<Statistic title="Youtube live subs" value={liveYtSubCount} precision={0} />}>
+          <Descriptions.Item label={<Statistic title="Youtube subs" value={liveYtSubCount} precision={0} />}>
             <Progress percent={ytLiveSubPercent}></Progress>
           </Descriptions.Item>
         )}
@@ -187,7 +187,11 @@ export default function ContractList() {
     profile: { userId: myUserId, ethAddress: myEthAddress },
   } = useAuthentication();
   const blockchain = useBlockchain();
-  const { event: blockchainEvent, setEvent: setBlockchainEvent, contracts, setContracts } = useMyContracts();
+  const { event: blockchainEvent, contracts } = useMyContracts();
+
+  useEffect(() => {
+    console.log(`Blockchain event: ${JSON.stringify(blockchainEvent)}`);
+  }, [blockchainEvent]);
 
   // useEffect(() => {
   //   if (blockchainEvent == null || blockchainEvent.seen === true) {

@@ -185,7 +185,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
           return offer;
         },
         error => {
-          console.log(`Error saving object,`, error);
+          console.log(`Error saving offer,`, error);
         },
       );
   };
@@ -272,6 +272,49 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     return query;
   };
 
+  const hydrateContract = async contract => {
+    console.log(`Hydrating contract ${JSON.stringify(contract)}`);
+    const owner = await getProfile(contract.get("ownerId"));
+    contract.set("owner", owner);
+    const provider = await getProfile(contract.get("providerId"));
+    contract.set("provider", provider);
+    if (Blockchain.web3) {
+      const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
+      console.log(`On-chain props:`, onChainProps);
+      Object.entries(onChainProps).forEach(([name, value]) => {
+        contract.set(name, value);
+      });
+    }
+
+    const channelId = contract.get("ytChannelId");
+    if (channelId !== "-") {
+      console.log(`Get statistics for ${channelId}`);
+      try {
+        const statistics = await Moralis.Cloud.run("getYoutubeStatistics", {
+          channelId,
+        });
+        console.log(`YT Statistics for contract channel ${channelId}: ${JSON.stringify(statistics)}`);
+        const { viewCount, subscriberCount } = statistics;
+        contract.set("liveYtViewCount", viewCount);
+        contract.set("liveYtSubCount", subscriberCount);
+      } catch (error) {
+        console.log(`Error getting channel stats for ${channelId}:`, error);
+      }
+    }
+
+    return contract.toJSON();
+  };
+
+  // const getContract = async ({ contractId, contractAddress }) => {
+  //   const query = new Moralis.Query(ContractObject);
+  //   if (contractAddress) {
+  //     query.equalTo("contractAddress", contractAddress);
+  //     return query.first().then(hydrateContract);
+  //   }
+
+  //   return query.get(contractId).then(hydrateContract);
+  // };
+
   const getContracts = async ({ ownerId, providerId }) => {
     console.log(`Get contracts with params ownerId=${ownerId}, providerId=${providerId}`);
     if (!ownerId && !providerId) {
@@ -294,49 +337,21 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     query.descending("createdAt");
     const contracts = await query.find();
     console.log(`Contracts with ownerId=${ownerId}, providerId=${providerId}: ${JSON.stringify(contracts)}`);
-    const hydratedContracts = await Promise.all(
-      contracts.map(async contract => {
-        const owner = await getProfile(contract.get("ownerId"));
-        contract.set("owner", owner);
-        const provider = await getProfile(contract.get("providerId"));
-        contract.set("provider", provider);
-        if (Blockchain.web3) {
-          const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
-          console.log(`On-chain props:`, onChainProps);
-          Object.entries(onChainProps).forEach(([name, value]) => {
-            contract.set(name, value);
-          });
-        }
-
-        const channelId = contract.get("ytChannelId");
-        if (channelId !== "-") {
-          console.log(`Get statistics for ${channelId}`);
-          try {
-            const statistics = await Moralis.Cloud.run("getYoutubeStatistics", {
-              channelId,
-            });
-            console.log(`YT Statistics for contract channel ${channelId}: ${JSON.stringify(statistics)}`);
-            const { viewCount, subscriberCount } = statistics;
-            contract.set("liveYtViewCount", viewCount);
-            contract.set("liveYtSubCount", subscriberCount);
-          } catch (error) {
-            console.log(`Error getting channel stats for ${channelId}:`, error);
-          }
-        }
-
-        return contract.toJSON();
-      }),
-    );
-    console.log(`Offers with author ${JSON.stringify(hydratedContracts)}`);
+    const hydratedContracts = await Promise.all(contracts.map(hydrateContract));
+    console.log(`Hydrated contracts ${JSON.stringify(hydratedContracts)}`);
     hydratedContracts.forEach(contract => {
-      console.log(`Serializing offer ${contract}`);
+      console.log(`Serializing contracts ${contract}`);
       LocalStorage.setItem(contract.objectId, contract);
     });
     return hydratedContracts;
   };
 
+  const subscribeToContracts = userId => {
+    const query = Moralis.Query.or(queryByOwner(userId), queryByProvider(userId));
+    return query.subscribe();
+  };
+
   return {
-    getUser: getProfile,
     putPost,
     setPostStatus,
     getPosts,
@@ -345,7 +360,9 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     setOfferStatus,
     getOffers,
     putContract,
+    hydrateContract,
     getContracts,
+    subscribeToContracts,
   };
 };
 

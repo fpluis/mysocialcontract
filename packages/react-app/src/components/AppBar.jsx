@@ -29,7 +29,7 @@ export default function AppBar() {
 
   useEffect(() => {
     console.log(`Run effect with contract seen? ${contractEvent.seen}; local seen ${seenContracts}; route: ${route}`);
-    if (!contractEvent.seen && !seenContracts && route !== "/posts/" && !route.startsWith("/me/")) {
+    if (!contractEvent.seen && !seenContracts && !route.startsWith("/posts") && !route.startsWith("/me")) {
       console.log(`Show appbar contract notification`);
       setShowContractNotification(true);
       setSeenContracts(false);
