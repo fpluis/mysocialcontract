@@ -10,13 +10,6 @@ const loadMessages = chatId => {
   return query.find();
 };
 
-const subscribeToMessages = chatId => {
-  const query = new Moralis.Query(MessageObject);
-  query.ascending("createdAt");
-  query.equalTo("chatId", chatId);
-  return query.subscribe();
-};
-
 const hydrateChat = async (chat, userId) => {
   const object = chat.toJSON();
   const { participants } = object;
@@ -94,6 +87,22 @@ export const MessagingProvider = ({ children = null }) => {
   //   }
   // }, [incomingMessages]);
 
+  const subscribeToMessages = chatId => {
+    const query = new Moralis.Query(MessageObject);
+    query.ascending("createdAt");
+    query.equalTo("chatId", chatId);
+    return query.subscribe().then(subscription => {
+      setSubscriptionMap(subscriptionMap => {
+        subscription.on("create", messageObject => {
+          console.log(`INCOMING MESSAGE: ${JSON.stringify(messageObject.toJSON())}`);
+          addMessages(chatId, [messageObject]);
+        });
+        subscriptionMap[chatId] = subscription;
+        return subscriptionMap;
+      });
+    });
+  };
+
   useEffect(async () => {
     if (!user.authenticated() || !myUserId) {
       return;
@@ -119,17 +128,9 @@ export const MessagingProvider = ({ children = null }) => {
 
     loadedChats.forEach(chat => {
       const { objectId: chatId } = chat;
-      subscribeToMessages(chatId).then(subscription => {
-        setSubscriptionMap(subscriptionMap => {
-          subscription.on("create", messageObject => {
-            console.log(`INCOMING MESSAGE: ${JSON.stringify(messageObject.toJSON())}`);
-            addMessages(chatId, [messageObject]);
-          });
-          subscriptionMap[chatId] = subscription;
-          return subscriptionMap;
-        });
-      });
+      subscribeToMessages(chatId);
       loadMessages(chatId).then(messages => {
+        console.log(`Loaded messages for ${chatId}: ${JSON.stringify(messages)}`);
         addMessages(chatId, messages);
       });
     });
@@ -137,8 +138,20 @@ export const MessagingProvider = ({ children = null }) => {
     const subscription = await subscribeToChats(user.id);
     subscription.on("create", async chat => {
       const hydrated = await hydrateChat(chat, user.id);
-      console.log(`Chat created:`, hydrated);
+      const { objectId: chatId, participants } = hydrated;
+      console.log(`Chat created:`, hydrated, chatId);
+      hydrated.unread = 1;
       addChat(hydrated);
+      subscribeToMessages(chatId);
+      const userIsChatRecipient = participants[0] === user.id;
+      // We only load the messages for a fresh chat if we didn't create it
+      // because otherwise the chat's messages will be doubled
+      if (userIsChatRecipient) {
+        loadMessages(chatId).then(messages => {
+          console.log(`Loaded messages for ${chatId}: ${JSON.stringify(messages)}`);
+          addMessages(chatId, messages);
+        });
+      }
     });
     setChatSubscription(subscription);
   }, [user.authenticated(), myUserId]);
