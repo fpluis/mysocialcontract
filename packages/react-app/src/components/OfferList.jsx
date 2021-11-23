@@ -2,9 +2,10 @@ import { List, Button, Avatar, Row, Tooltip, Space, Col } from "antd";
 import React from "react";
 import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
-import { CloseOutlined, FormOutlined } from "@ant-design/icons";
+import { MessageOutlined, CloseOutlined, FormOutlined } from "@ant-design/icons";
 import "./OfferList.css";
 import { Conditions } from "./index";
+import { Link } from "react-router-dom";
 
 export default function OfferList({ offers, post, onRejectOffer, onComposeContract }) {
   console.log(`Render offer list; post: ${JSON.stringify(post)}`);
@@ -16,7 +17,7 @@ export default function OfferList({ offers, post, onRejectOffer, onComposeContra
       className="offer-list"
     >
       {offers.map((offer, key) => {
-        const { author: contractor, createdAt, status } = offer;
+        const { author: provider, createdAt, status } = offer;
         const statusMessage =
           status === "active" ? (
             <span>Pending</span>
@@ -26,6 +27,11 @@ export default function OfferList({ offers, post, onRejectOffer, onComposeContra
             <span style={{ color: "#388e3c" }}>Accepted</span>
           );
         const actions = [
+          <Tooltip key="reject" position="top" text="Message the user">
+            <Link to={`/chat/${provider.userId}`}>
+              <Button icon={<MessageOutlined />}></Button>
+            </Link>
+          </Tooltip>,
           <Tooltip key="reject" position="top" text="Reject offer">
             <Button
               icon={<CloseOutlined />}
@@ -55,11 +61,11 @@ export default function OfferList({ offers, post, onRejectOffer, onComposeContra
               avatar={
                 <Avatar
                   size={32}
-                  alt={contractor.username}
-                  src={contractor.profilePicture || <Blockies seed={contractor.ethAddress.toLowerCase()} />}
+                  alt={provider.username}
+                  src={provider.profilePicture || <Blockies seed={provider.ethAddress.toLowerCase()} />}
                 ></Avatar>
               }
-              title={contractor.username}
+              title={provider.username}
               description={
                 <Col span={24}>
                   <Row>
