@@ -1,5 +1,6 @@
-import React from "react";
-import { Button, Form, DatePicker, InputNumber, Input, Modal, message } from "antd";
+import Moralis from "moralis";
+import React, { useState } from "react";
+import { Button, Form, DatePicker, InputNumber, Input, Modal, message, Tooltip } from "antd";
 
 const { RangePicker } = DatePicker;
 
@@ -13,9 +14,12 @@ export default function PostEditorModal({
     description: "",
   },
 }) {
+  const [isSearching, setIsSearching] = useState(false);
+  const [form] = Form.useForm();
   return (
     <Modal visible={visible} title={title} footer={null} onCancel={onCancel}>
       <Form
+        form={form}
         initialValues={initialValues}
         style={{ marginTop: 64 }}
         name="validate_other"
@@ -86,8 +90,27 @@ export default function PostEditorModal({
         <Form.Item name="thresholdETH" label="Threshold funds">
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
+        <Form.Item name="ytChannelName" label="Youtube channel name">
+          <Input.Search
+            placeholder="Search the Youtube channel id by name"
+            loading={isSearching}
+            onSearch={username => {
+              setIsSearching(true);
+              console.log(`Search for youtube channel ${username}`);
+              Moralis.Cloud.run("getYoutubeChannelId", {
+                username,
+              }).then(ytChannelId => {
+                console.log(`Response: ${ytChannelId}`);
+                form.setFieldsValue({
+                  ytChannelId,
+                });
+                setIsSearching(false);
+              });
+            }}
+          ></Input.Search>
+        </Form.Item>
         <Form.Item name="ytChannelId" label="Youtube channel id">
-          <Input />
+          <Input placeholder="Use the search above or input directly" />
         </Form.Item>
         <Form.Item name="ytMinViewCount" label="Youtube Views">
           <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />

@@ -38,7 +38,11 @@ const getYoutubeChannelId = async (youtubeApiKey, name) => {
   const {
     data: { items },
   } = ytResponse;
-  const [{ channelId }] = items;
+  const [
+    {
+      id: { channelId },
+    },
+  ] = items;
   return channelId;
 };
 
