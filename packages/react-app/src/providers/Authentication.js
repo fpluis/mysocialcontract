@@ -45,6 +45,10 @@ export const AuthenticationProvider = ({ children = null }) => {
               username: user.get("username"),
               userId: user.id,
             });
+            const acl = new Moralis.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setWriteAccess(user.id, true);
+            profile.setACL(acl);
             await profile.save();
           }
 

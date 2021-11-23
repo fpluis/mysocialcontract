@@ -51,8 +51,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       post.set("objectId", objectId);
     }
 
-    const [start, end] = period;
     const authorId = Authentication.profile.userId;
+    const acl = new Moralis.ACL();
+    acl.setPublicReadAccess(true);
+    acl.setWriteAccess(authorId, true);
+    post.setACL(acl);
+    const [start, end] = period;
     return post
       .save({
         status: "active",
@@ -157,6 +161,10 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   }) => {
     const [start, end] = period;
     const offer = new OfferObject();
+    const acl = new Moralis.ACL();
+    acl.setPublicReadAccess(true);
+    acl.setWriteAccess(Authentication.profile.userId, true);
+    offer.setACL(acl);
     return offer
       .save({
         status: "active",
@@ -231,6 +239,10 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
   const putContract = async ({ contractAddress, ownerId, providerId }) => {
     const contract = new ContractObject();
+    const acl = new Moralis.ACL();
+    acl.setPublicReadAccess(true);
+    acl.setWriteAccess(Authentication.profile.userId, true);
+    contract.setACL(acl);
     return contract
       .save({
         contractAddress,

@@ -175,6 +175,13 @@ export const MessagingProvider = ({ children = null }) => {
     saveChat: async participants => {
       const chat = new ChatObject();
       chat.set("participants", participants);
+      const acl = new Moralis.ACL();
+      acl.setPublicReadAccess(true);
+      acl.setReadAccess(participants[0], true);
+      acl.setReadAccess(participants[1], true);
+      acl.setWriteAccess(participants[0], true);
+      acl.setWriteAccess(participants[1], true);
+      chat.setACL(acl);
       return chat.save().then(chat => chat.toJSON());
     },
     setChatAsRead: ({ objectId: chatId }) => {
@@ -192,7 +199,15 @@ export const MessagingProvider = ({ children = null }) => {
         });
     },
     sendMessage: async ({ chatId, content, source, destinatary, isNewChat = false }) => {
-      return new MessageObject({ chatId, content, source, destinatary, unread: true })
+      const message = new MessageObject({ chatId, content, source, destinatary, unread: true });
+      const acl = new Moralis.ACL();
+      acl.setPublicReadAccess(true);
+      acl.setReadAccess(source, true);
+      acl.setReadAccess(destinatary, true);
+      acl.setWriteAccess(source, true);
+      acl.setWriteAccess(destinatary, true);
+      message.setACL(acl);
+      return message
         .save()
         .then(message => {
           if (isNewChat) {
