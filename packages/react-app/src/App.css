@@ -39,8 +39,22 @@
   margin-bottom: 6px;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1430px) {
   .root-container {
-    margin: 0 128px;
+    margin: 0 300px;
+  }
+
+  .ant-modal {
+    width: 800px !important;
+  }
+}
+
+@media (max-width: 1430px) {
+  .root-container {
+    margin: 0 32px;
+  }
+
+  .ant-modal {
+    width: 80% !important;
   }
 }
