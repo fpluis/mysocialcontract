@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, Button, Row, Col, Badge } from "antd";
 import { MessageOutlined, HomeOutlined, FileTextOutlined, LoginOutlined } from "@ant-design/icons";
-import { useAuthentication, useMyContracts } from "../providers";
+import { useAuthentication, useMessaging, useMyContracts } from "../providers";
 import Blockies from "react-blockies";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import "./AppBar.css";
@@ -10,9 +10,12 @@ import "./AppBar.css";
 export default function AppBar() {
   const { user, profile, login } = useAuthentication();
   const { currentTheme } = useThemeSwitcher();
-  const { event: contractEvent, setEvent: setContractEvent } = useMyContracts();
-  const [seenContract, setSeenContract] = useState(false);
+  const { event: contractEvent } = useMyContracts();
+  const { chats } = useMessaging();
+  const [seenContracts, setSeenContracts] = useState(false);
+  // const [seenChat, setSeenChat] = useState(false);
   const [showContractNotification, setShowContractNotification] = useState(false);
+  const [showChatNotification, setShowChatNotification] = useState(false);
   const { ethAddress = "", username = "", profilePicture } = profile;
   console.log(`Profile picture ${JSON.stringify(profilePicture)}; profile ${JSON.stringify(profile)}`);
   const profilePictureUrl = profilePicture ? profilePicture.url : null;
@@ -25,13 +28,21 @@ export default function AppBar() {
   }, [setRoute, window.location.hash]);
 
   useEffect(() => {
-    console.log(`Run effect with contract seen? ${contractEvent.seen}; local seen ${seenContract}; route: ${route}`);
-    if (!contractEvent.seen && !seenContract && route !== "/posts/" && !route.startsWith("/me/")) {
+    console.log(`Run effect with contract seen? ${contractEvent.seen}; local seen ${seenContracts}; route: ${route}`);
+    if (!contractEvent.seen && !seenContracts && route !== "/posts/" && !route.startsWith("/me/")) {
       console.log(`Show appbar contract notification`);
       setShowContractNotification(true);
-      setSeenContract(false);
+      setSeenContracts(false);
     }
   }, [contractEvent, route]);
+
+  useEffect(() => {
+    console.log(`Run effect with chats ${JSON.stringify(chats)}; route: ${route}`);
+    if (chats.some(({ unread }) => unread > 0) && !route.startsWith("/chat/")) {
+      console.log(`Show appbar chat notification`);
+      setShowChatNotification(true);
+    }
+  }, [chats, route]);
 
   const backgroundColor = currentTheme === "light" ? "white" : "#222222";
 
@@ -51,7 +62,7 @@ export default function AppBar() {
                   <FileTextOutlined
                     className={`icon ${currentTheme}`}
                     onClick={() => {
-                      setSeenContract(true);
+                      setSeenContracts(true);
                       setShowContractNotification(false);
                     }}
                   />
@@ -62,7 +73,19 @@ export default function AppBar() {
         </Col>
         <Col span={6}>
           <Link to={`/chat/`}>
-            <Button icon={<MessageOutlined className={`icon ${currentTheme}`} />} />
+            <Badge dot={showChatNotification}>
+              <Button
+                icon={
+                  <MessageOutlined
+                    className={`icon ${currentTheme}`}
+                    onClick={() => {
+                      // setSeenChat(true);
+                      setShowChatNotification(false);
+                    }}
+                  />
+                }
+              />
+            </Badge>
           </Link>
         </Col>
         <Col span={6}>

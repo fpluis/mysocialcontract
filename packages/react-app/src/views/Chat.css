@@ -4,6 +4,8 @@ button {
 }
 
 .chat-box {
+  overflow-y: scroll;
+  height: 800px;
   border-left: 1px solid rgba(0, 0, 0, 0.06);
   border-right: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -18,6 +20,10 @@ button {
   background: none !important;
   padding: 0 !important;
   border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.chat-right-side {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .rce-sbar-item {
@@ -39,6 +45,8 @@ button {
 }
 
 .rce-container-input {
+  position: absolute;
+  bottom: 0;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 

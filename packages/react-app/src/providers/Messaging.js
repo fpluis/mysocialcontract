@@ -1,5 +1,5 @@
 import Moralis from "moralis";
-import React, { useContext, useEffect, useCallback, useState, useMemo } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useAuthentication } from ".";
 import { ProfileObject, MessageObject, ChatObject } from "../classes";
 
@@ -17,31 +17,28 @@ const subscribeToMessages = chatId => {
   return query.subscribe();
 };
 
+const hydrateChat = async (chat, userId) => {
+  const object = chat.toJSON();
+  const { participants } = object;
+  const [otherId] = participants.filter(participant => participant !== userId);
+  console.log(`Other participant's id: ${otherId}`);
+  const profileQuery = new Moralis.Query(ProfileObject);
+  profileQuery.equalTo("userId", otherId);
+  const otherAsObject = await profileQuery.first();
+  return {
+    ...object,
+    other: otherAsObject.toJSON(),
+    unread: 0,
+  };
+};
+
 const loadChats = async userId => {
   const query = new Moralis.Query(ChatObject);
   query.ascending("createdAt");
   query.contains("participants", userId);
   const chats = await query.find();
   console.log(`Chats: ${JSON.stringify(chats)}`);
-  return Promise.all(
-    chats.map(async chat => {
-      const object = chat.toJSON();
-      const { participants } = object;
-      const [otherId] = participants.filter(participant => participant !== userId);
-      console.log(`Other participant's id: ${otherId}`);
-      const profileQuery = new Moralis.Query(ProfileObject);
-      const other = await profileQuery.get(otherId);
-      return {
-        ...object,
-        other: {
-          userId: other.get("userId"),
-          profilePicture: other.get("profilePicture"),
-          username: other.get("username"),
-          ethAddress: other.get("ethAddress"),
-        },
-      };
-    }),
-  );
+  return Promise.all(chats.map(chat => hydrateChat(chat, userId)));
 };
 
 const subscribeToChats = userId => {
@@ -53,77 +50,105 @@ const subscribeToChats = userId => {
 const MessagingProviderContext = React.createContext({});
 
 export const MessagingProvider = ({ children = null }) => {
-  const { user } = useAuthentication();
+  const {
+    user,
+    profile: { userId: myUserId },
+  } = useAuthentication();
   const [chats, setChats] = useState([]);
+  const [hasLoadedChats, setHasLoadedChats] = useState(false);
   const [messageMap, setMessageMap] = useState({});
   const [subscriptionMap, setSubscriptionMap] = useState({});
   const [chatSubscription, setChatSubscription] = useState();
-  const [incomingMessages, setIncomingMessages] = useState();
+  // const [incomingMessages, setIncomingMessages] = useState();
 
   const addChat = chat => {
-    setChats([...chats, chat]);
+    console.log(`Add chat ${JSON.stringify(chat)} to chats ${JSON.stringify(chats)}`);
+    setChats(previousChats => [...previousChats, chat]);
   };
 
   const addMessages = (chatId, messages) => {
-    const current = messageMap[chatId] == null ? [] : messageMap[chatId];
-    const parsed = messages.map(message => message.toJSON());
-    setMessageMap({ ...messageMap, [chatId]: current.concat(parsed) });
+    setMessageMap(messageMap => {
+      const current = messageMap[chatId] == null ? [] : messageMap[chatId];
+      const parsed = messages.map(message => message.toJSON());
+      console.log(`Add messages ${JSON.stringify(parsed)} to ${JSON.stringify(current)}`);
+      const unread = parsed.reduce((total, { unread, destinatary }) => {
+        return unread && destinatary === myUserId ? total + 1 : total;
+      }, 0);
+      console.log(`A total of ${unread} unread messages`);
+      if (unread > 0) {
+        setChats(currentChats => {
+          const chat = currentChats.find(({ objectId }) => objectId === chatId);
+          chat.unread += unread;
+          return [...currentChats];
+        });
+      }
+
+      return { ...messageMap, [chatId]: current.concat(parsed) };
+    });
   };
 
-  useEffect(() => {
-    if (incomingMessages) {
-      addMessages(incomingMessages.chatId, incomingMessages.messages);
-      setIncomingMessages(null);
+  // useEffect(() => {
+  //   if (incomingMessages) {
+  //     addMessages(incomingMessages.chatId, incomingMessages.messages);
+  //     setIncomingMessages(null);
+  //   }
+  // }, [incomingMessages]);
+
+  useEffect(async () => {
+    if (!user.authenticated() || !myUserId) {
+      return;
     }
-  }, [incomingMessages]);
 
-  useEffect(() => {
-    (async () => {
-      if (!user.authenticated()) {
-        return;
-      }
+    if (chatSubscription) {
+      chatSubscription.unsubscribe();
+    }
 
-      if (chatSubscription) {
-        chatSubscription.unsubscribe();
-      }
+    if (subscriptionMap) {
+      [...Object.values(subscriptionMap)].forEach(subscription => {
+        subscription.unsubscribe();
+      });
+      setSubscriptionMap({});
+    }
 
-      if (subscriptionMap) {
-        [...Object.values(subscriptionMap)].forEach(subscription => {
-          subscription.unsubscribe();
-        });
-        setSubscriptionMap({});
-      }
+    const loadedChats = await loadChats(myUserId);
+    console.log(`Loaded chats: ${JSON.stringify(loadedChats)}`);
+    // Order here matters because chats have only truly loaded
+    // after they are also set.
+    setChats(loadedChats);
+    setHasLoadedChats(true);
 
-      const loadedChats = await loadChats(user.id);
-      setChats(loadedChats);
-
-      loadedChats.forEach(chat => {
-        const { objectId: chatId } = chat;
-        subscribeToMessages(chatId).then(subscription => {
-          subscriptionMap[chatId] = subscription;
-          setSubscriptionMap(subscriptionMap);
+    loadedChats.forEach(chat => {
+      const { objectId: chatId } = chat;
+      subscribeToMessages(chatId).then(subscription => {
+        setSubscriptionMap(subscriptionMap => {
           subscription.on("create", messageObject => {
-            setIncomingMessages({ chatId, messages: [messageObject] });
+            console.log(`INCOMING MESSAGE: ${JSON.stringify(messageObject.toJSON())}`);
+            addMessages(chatId, [messageObject]);
           });
-        });
-        loadMessages(chatId).then(messages => {
-          setIncomingMessages({ chatId, messages });
+          subscriptionMap[chatId] = subscription;
+          return subscriptionMap;
         });
       });
+      loadMessages(chatId).then(messages => {
+        addMessages(chatId, messages);
+      });
+    });
 
-      const subscription = await subscribeToChats(user.id);
-      subscription.on("create", chat => {
-        console.log(`Chat created:`, chat);
-        addChat(chat);
-      });
-      setChatSubscription(subscription);
-    })();
-  }, []);
+    const subscription = await subscribeToChats(user.id);
+    subscription.on("create", async chat => {
+      const hydrated = await hydrateChat(chat, user.id);
+      console.log(`Chat created:`, hydrated);
+      addChat(hydrated);
+    });
+    setChatSubscription(subscription);
+  }, [user.authenticated(), myUserId]);
 
   const messagingFunctions = {
     createChat: async (userId, otherId) => {
       const query = new Moralis.Query(ProfileObject);
-      const other = await query.get(otherId);
+      query.equalTo("userId", otherId);
+      const other = await query.first();
+      console.log(`Other participant found for user id ${otherId}: ${JSON.stringify(other)}`);
       return {
         participants: [otherId, userId],
         other: {
@@ -134,27 +159,43 @@ export const MessagingProvider = ({ children = null }) => {
         },
       };
     },
-    saveChat: async ({ participants }) => {
+    saveChat: async participants => {
       const chat = new ChatObject();
       chat.set("participants", participants);
-      return chat.save().then(error => {
-        console.log(`Error saving object,`, error);
-      });
+      return chat.save().then(chat => chat.toJSON());
     },
-    sendMessage: async ({ chatId, content, source, destinatary }) => {
-      const message = new MessageObject();
-      message.set("chatId", chatId);
-      message.set("content", content);
-      message.set("source", source);
-      message.set("destinatary", destinatary);
-      return message.save().catch(error => {
-        console.log(`Error saving message`, error);
+    setChatAsRead: ({ objectId: chatId }) => {
+      console.log(`Setting chat ${chatId} as read`);
+      setChats(currentChats => {
+        const chat = currentChats.find(({ objectId }) => objectId === chatId);
+        chat.unread = 0;
+        return [...currentChats];
       });
+      const messages = messageMap[chatId] || [];
+      return messages
+        .filter(({ unread }) => unread === true)
+        .forEach(({ objectId }) => {
+          new MessageObject({ objectId, unread: false }).save();
+        });
+    },
+    sendMessage: async ({ chatId, content, source, destinatary, isNewChat = false }) => {
+      return new MessageObject({ chatId, content, source, destinatary, unread: true })
+        .save()
+        .then(message => {
+          if (isNewChat) {
+            addMessages(chatId, [message]);
+          }
+
+          return message.toJSON();
+        })
+        .catch(error => {
+          console.log(`Error saving message`, error);
+        });
     },
   };
 
   return (
-    <MessagingProviderContext.Provider value={{ chats, messageMap, ...messagingFunctions }}>
+    <MessagingProviderContext.Provider value={{ chats, messageMap, hasLoadedChats, ...messagingFunctions }}>
       {children}
     </MessagingProviderContext.Provider>
   );
