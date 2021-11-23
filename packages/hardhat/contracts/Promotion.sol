@@ -48,11 +48,10 @@ contract Promotion is ChainlinkClient {
             _initialDeposit == 0 || paidAmount >= _initialDeposit,
             "If the initial deposit is set, the minimum funds must be also present in the transaction"
         );
-        setPublicChainlinkToken();
         jobId = "7ab68903a4bd49168f67a1bdb727c1f0";
         setChainlinkToken(0xa36085F69e2889c224210F603D836748e7dC0088);
         setChainlinkOracle(0x22217862db8312c7aEA9150a52662E74756bc744);
-        fee = 0.1 * 10**18;
+        fee = 1 * LINK_DIVISIBILITY;
 
         owner = _owner;
         provider = _provider;
@@ -127,12 +126,12 @@ contract Promotion is ChainlinkClient {
             keccak256(abi.encodePacked("-"))
         ) {
             Chainlink.Request memory req = buildChainlinkRequest(
-                "7ab68903a4bd49168f67a1bdb727c1f0",
+                jobId,
                 address(this),
                 this.fulfill.selector
             );
             req.add("ytChannelId", ytChannelId);
-            requestOracleData(req, 1 * LINK_DIVISIBILITY);
+            requestOracleData(req, fee);
         } else {
             checkIsSuccessful();
         }
