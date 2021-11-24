@@ -40,10 +40,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     initialDeposit,
     share,
     thresholdETH,
-    period,
+    endDate,
     ytChannelId,
     ytMinViewCount,
     ytMinSubscriberCount,
+    twitterUsername,
+    twitterMinFollowers,
   }) => {
     console.log(`Creating post; object id: ${objectId}`);
     const post = new PostObject();
@@ -56,7 +58,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     acl.setPublicReadAccess(true);
     acl.setWriteAccess(authorId, true);
     post.setACL(acl);
-    const [start, end] = period;
+    // const [start, end] = period;
     return post
       .save({
         status: "active",
@@ -65,12 +67,14 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         description,
         initialDeposit,
         thresholdETH,
-        startDate: start.unix(),
-        endDate: end.unix(),
+        // startDate: start.unix(),
+        endDate: endDate.unix(),
         share,
         ytChannelId,
         ytMinViewCount,
         ytMinSubscriberCount,
+        twitterUsername,
+        twitterMinFollowers,
       })
       .then(
         async post => {
@@ -155,11 +159,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     initialDeposit,
     share,
     thresholdETH,
-    period,
+    endDate,
     ytMinViewCount,
     ytMinSubscriberCount,
+    twitterMinFollowers,
   }) => {
-    const [start, end] = period;
+    // const [start, end] = period;
     const offer = new OfferObject();
     const acl = new Moralis.ACL();
     acl.setPublicReadAccess(true);
@@ -173,11 +178,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         postId,
         initialDeposit,
         thresholdETH,
-        startDate: start.unix(),
-        endDate: end.unix(),
+        // startDate: start.unix(),
+        endDate: endDate.unix(),
         share,
         ytMinViewCount,
         ytMinSubscriberCount,
+        twitterMinFollowers,
       })
       .then(
         offer => {
@@ -300,6 +306,15 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       } catch (error) {
         console.log(`Error getting channel stats for ${channelId}:`, error);
       }
+    }
+
+    const twitterUsername = contract.get("twitterUsername");
+    if (twitterUsername !== "-") {
+      const liveTwitterFollowers = await Moralis.Cloud.run("getTwitterFollowers", {
+        username: twitterUsername,
+      });
+      console.log(`Twitter followers for ${twitterUsername}: ${liveTwitterFollowers}`);
+      contract.set("liveTwitterFollowers", liveTwitterFollowers);
     }
 
     return contract.toJSON();

@@ -22,6 +22,7 @@ export default function PostDetail({ post }) {
   };
 
   const putOffer = async props => {
+    console.log(`Put offer with props ${JSON.stringify(props)}`);
     const result = await remoteStorage.putOffer({ ...props, postId: objectId });
     console.log(`Result: ${JSON.stringify(result)}`);
     setIsModalVisible(false);

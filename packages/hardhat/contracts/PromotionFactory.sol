@@ -16,27 +16,37 @@ contract PromotionFactory is CloneFactory {
     function createPromotion(
         address owner,
         address provider,
-        uint256 initialDeposit,
-        uint256 thresholdETH,
-        uint256 startDate,
-        uint256 endDate,
-        uint256 share,
+        uint256[4] calldata config,
+        // uint256 initialDeposit,
+        // uint256 thresholdETH,
+        // uint256 endDate,
+        // uint256 share,
+
+        // uint256 startDate,
+        // Promotion.Period calldata period,
+
         string calldata ytChannelId,
         uint256 ytMinViewCount,
-        uint256 ytMinSubscriberCount
+        uint256 ytMinSubscriberCount,
+        string calldata twitterUsername,
+        uint256 twitterMinFollowers
     ) external payable returns (address payable clone) {
         clone = payable(createClone(contractLibraryAddress));
+        // Promotion.YtParams memory ytParams;
+        // ytParams.ytChannelId = ytChannelId;
+        // ytParams.ytMinViewCount = ytMinViewCount;
+        // ytParams.ytMinSubscriberCount = ytMinSubscriberCount;
+
         Promotion(clone).initialize(
             owner,
             provider,
-            initialDeposit,
-            thresholdETH,
-            startDate,
-            endDate,
-            share,
+            config,
+            // ytParams,
             ytChannelId,
             ytMinViewCount,
             ytMinSubscriberCount,
+            twitterUsername,
+            twitterMinFollowers,
             msg.value
         );
         if (msg.value > 0) {

@@ -9,10 +9,10 @@ import { CloseOutlined, EditOutlined } from "@ant-design/icons";
 import moment from "moment";
 
 const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
-  const { ytChannelId } = post;
+  const { ytChannelId, twitterUsername } = post;
   return (
     <Modal title={title} visible={visible} onOk={onOk} onCancel={onCancel}>
-      <Conditions title={null} layout="horizontal" conditions={{ ...offer, ytChannelId }} />
+      <Conditions title={null} layout="horizontal" conditions={{ ...offer, twitterUsername, ytChannelId }} />
     </Modal>
   );
 };
@@ -99,19 +99,21 @@ export default function MyRequests() {
   const [currentPost, setCurrentPost] = useState();
 
   const createContract = async (post, offer) => {
-    const { ytChannelId } = post;
-    const { initialDeposit, thresholdETH, startDate, endDate, share, ytMinViewCount, ytMinSubscriberCount } = offer;
+    const { ytChannelId, twitterUsername } = post;
+    const { initialDeposit, thresholdETH, endDate, share, ytMinViewCount, ytMinSubscriberCount, twitterMinFollowers } =
+      offer;
     const conditions = {
       owner: currentPost.author.ethAddress,
       provider: currentOffer.author.ethAddress,
       initialDeposit,
       thresholdETH,
-      startDate,
       endDate,
       share,
       ytChannelId,
       ytMinViewCount,
       ytMinSubscriberCount,
+      twitterUsername,
+      twitterMinFollowers,
     };
     console.log(`Create contract with conditions: ${JSON.stringify(conditions)}`);
     const contractAddress = await blockchain.createContract(conditions);
@@ -190,7 +192,7 @@ export default function MyRequests() {
           title="Edit this post"
           initialValues={{
             ...currentPost,
-            period: [moment(currentPost.startDate * 1000), moment(currentPost.endDate * 1000)],
+            endDate: moment(currentPost.endDate * 1000),
           }}
           onCancel={() => {
             setIsEditModalVisible(false);

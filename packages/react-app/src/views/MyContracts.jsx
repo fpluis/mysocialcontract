@@ -1,10 +1,9 @@
 import { List, Button, Avatar, Col, Row, Descriptions, Progress, Divider, Statistic } from "antd";
-import React, { useEffect } from "react";
+import React from "react";
 import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
 import { Conditions } from "../components";
 import { useAuthentication, useBlockchain, useMyContracts } from "../providers";
-// import "./ContractList.css";
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
@@ -25,9 +24,12 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
     liveYtSubCount,
     ytMinViewCount,
     ytMinSubscriberCount,
+    twitterFollowers,
+    twitterMinFollowers,
+    liveTwitterFollowers,
   } = contract;
 
-  console.log(`Render contract ${contractAddress}`);
+  console.log(`Render contract ${JSON.stringify(contract)}`);
 
   const deadlineInSeconds = contract.endDate;
   const nowInSeconds = new Date().getTime() / 1000;
@@ -36,9 +38,13 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
   const balancePercent = thresholdETH === 0 || isSuccessful ? 100 : Math.min((balance / thresholdETH) * 100, 100);
   const ytViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((ytViews / ytMinViewCount) * 100, 100);
   const ytSubsPercent = ytMinSubscriberCount === 0 ? 100 : Math.min((ytSubs / ytMinSubscriberCount) * 100, 100);
+  const twitterFollowersPercent =
+    twitterMinFollowers === 0 ? 100 : Math.min((twitterFollowers / twitterMinFollowers) * 100, 100);
   const ytLiveViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((liveYtViewCount / ytMinViewCount) * 100, 100);
   const ytLiveSubPercent =
     ytMinSubscriberCount === 0 ? 100 : Math.min((liveYtSubCount / ytMinSubscriberCount) * 100, 100);
+  const twitterLiveFollowersPercent =
+    twitterMinFollowers === 0 ? 100 : Math.min((liveTwitterFollowers / twitterMinFollowers) * 100, 100);
   // console.log(
   //   `Live yt sub count ${liveYtSubCount}, min sub count ${ytMinSubscriberCount}; div ${
   //     liveYtSubCount / ytMinSubscriberCount
@@ -64,6 +70,10 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
   const canWithdraw =
     (myEthAddress === provider.ethAddress && !isProviderPaid && status === "successful") ||
     (myEthAddress === owner.ethAddress && !isOwnerPaid && ["failed", "successful"].includes(status));
+
+  console.log(
+    `My eth address: ${myEthAddress}; provider eth address ${provider.ethAddress}; owner ${owner.ethAddress}; isOwnerPaid ${isOwnerPaid}; isProviderPaid ${isProviderPaid}; status ${status}`,
+  );
 
   return (
     <List.Item key={key} style={{ marginTop: "32px" }}>
@@ -137,6 +147,11 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
             <Progress percent={ytLiveSubPercent}></Progress>
           </Descriptions.Item>
         )}
+        {twitterMinFollowers && (
+          <Descriptions.Item label={<Statistic title="Twitter followers" value={liveTwitterFollowers} precision={0} />}>
+            <Progress percent={twitterLiveFollowersPercent}></Progress>
+          </Descriptions.Item>
+        )}
       </Descriptions>
       <Descriptions
         style={{ marginTop: "32px" }}
@@ -177,6 +192,11 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
             <Progress percent={ytSubsPercent}></Progress>
           </Descriptions.Item>
         )}
+        {twitterMinFollowers && (
+          <Descriptions.Item label={<Statistic title="Twitter followers" value={twitterFollowers} precision={0} />}>
+            <Progress percent={twitterFollowersPercent}></Progress>
+          </Descriptions.Item>
+        )}
       </Descriptions>
     </List.Item>
   );
@@ -187,52 +207,7 @@ export default function ContractList() {
     profile: { userId: myUserId, ethAddress: myEthAddress },
   } = useAuthentication();
   const blockchain = useBlockchain();
-  const { event: blockchainEvent, contracts } = useMyContracts();
-
-  useEffect(() => {
-    console.log(`Blockchain event: ${JSON.stringify(blockchainEvent)}`);
-  }, [blockchainEvent]);
-
-  // useEffect(() => {
-  //   if (blockchainEvent == null || blockchainEvent.seen === true) {
-  //     return;
-  //   }
-
-  //   const { name, address, from } = blockchainEvent;
-  //   const contract = contracts.find(({ contractAddress }) => contractAddress === address);
-
-  //   if (name === "PromotionCreated") {
-  //     console.log(`Created promotion`);
-  //     return;
-  //   }
-
-  //   if (name === "OnFulfill") {
-  //     const { ytSubs, ytViews } = blockchainEvent;
-  //     contract.ytSubs = ytSubs;
-  //     contract.ytViews = ytViews;
-  //   }
-
-  //   if (name === "OnSuccess") {
-  //     contract.isSuccessful = true;
-  //   }
-
-  //   if (name === "Withdraw") {
-  //     const { amount } = blockchainEvent;
-  //     contract.balance -= Number(amount);
-  //     console.log(`Handling withdraw event; Contract owner: ${contract.ownerId}}; from: ${from}`);
-  //     if (contract.ownerId === from) {
-  //       contract.isOwnerPaid = true;
-  //     } else {
-  //       contract.isProviderPaid = true;
-  //     }
-
-  //     console.log(`Amount withdrawn: ${amount}; new balance: ${contract.balance}`);
-  //   }
-
-  //   // Force contract rerender
-  //   setContracts([...contracts]);
-  //   setBlockchainEvent({ ...blockchainEvent, seen: true });
-  // }, [blockchainEvent]);
+  const { contracts } = useMyContracts();
 
   const withdraw = async contract => {
     const result = await blockchain.withdraw(contract.contractAddress);

@@ -30,24 +30,29 @@ export const Blockchain = {
     provider,
     initialDeposit,
     thresholdETH = 0,
-    startDate,
+    // startDate,
     endDate,
     share,
     ytChannelId = "-",
     ytMinViewCount = "0",
     ytMinSubscriberCount = "0",
+    twitterUsername = "-",
+    twitterMinFollowers = "0",
   }) => {
     const params = {
       owner,
       provider,
-      initialDeposit: BigNumber.from(`${initialDeposit * 1000000000000000000}`),
-      thresholdETH: BigNumber.from(`${thresholdETH * 1000000000000000000}`),
-      startDate,
-      endDate,
-      share,
+      config: [
+        BigNumber.from(`${initialDeposit * 1000000000000000000}`),
+        BigNumber.from(`${thresholdETH * 1000000000000000000}`),
+        endDate,
+        share,
+      ],
       ytChannelId,
       ytMinViewCount,
       ytMinSubscriberCount,
+      twitterUsername,
+      twitterMinFollowers,
     };
     console.log(
       `Create Promotion with params ${JSON.stringify(params)}; msgvalue: ${Moralis.Units.ETH(
@@ -81,7 +86,6 @@ export const Blockchain = {
     const onChainProps = [
       { type: "weinumber", name: "initialDeposit" },
       { type: "weinumber", name: "thresholdETH" },
-      { type: "number", name: "startDate" },
       { type: "number", name: "endDate" },
       { type: "number", name: "share" },
       { type: "number", name: "ytViews" },
@@ -89,6 +93,9 @@ export const Blockchain = {
       { type: "number", name: "ytMinViewCount" },
       { type: "number", name: "ytMinSubscriberCount" },
       { type: "string", name: "ytChannelId" },
+      { type: "number", name: "twitterFollowers" },
+      { type: "number", name: "twitterMinFollowers" },
+      { type: "string", name: "twitterUsername" },
       { type: "bool", name: "isSuccessful" },
       { type: "bool", name: "isProviderPaid" },
       { type: "bool", name: "isOwnerPaid" },
@@ -119,7 +126,7 @@ export const Blockchain = {
     if (contract.ytChannelId !== "-") {
       const linkTransferResult = await Moralis.transfer({
         type: "erc20",
-        amount: Moralis.Units.Token("1", "18"),
+        amount: Moralis.Units.Token("0.1", "18"),
         receiver: contractAddress,
         contractAddress: "0xa36085F69e2889c224210F603D836748e7dC0088",
       });

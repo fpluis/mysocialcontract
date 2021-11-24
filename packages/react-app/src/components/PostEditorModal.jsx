@@ -1,8 +1,6 @@
 import Moralis from "moralis";
 import React, { useState } from "react";
-import { Button, Form, DatePicker, InputNumber, Input, Modal, message, Tooltip } from "antd";
-
-const { RangePicker } = DatePicker;
+import { Button, Form, DatePicker, InputNumber, Input, Modal, Tooltip } from "antd";
 
 export default function PostEditorModal({
   visible,
@@ -64,16 +62,16 @@ export default function PostEditorModal({
           <InputNumber precision={0} min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item
-          name="period"
-          label="Period"
+          name="endDate"
+          label="Deadline"
           rules={[
             {
               required: true,
-              message: "Please specify a valid period",
+              message: "Please specify a valid deadline",
             },
           ]}
         >
-          <RangePicker />
+          <DatePicker />
         </Form.Item>
         <Form.Item
           name="initialDeposit"
@@ -116,6 +114,12 @@ export default function PostEditorModal({
           <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item name="ytMinSubscriberCount" label="Youtube Subscribers">
+          <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="twitterUsername" label="Twitter username">
+          <Input placeholder="The Twitter handle without the '@' i.e. 'elonmusk'" />
+        </Form.Item>
+        <Form.Item name="twitterMinFollowers" label="Twitter followers">
           <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
         </Form.Item>
 

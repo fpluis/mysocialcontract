@@ -2,17 +2,16 @@ import React from "react";
 import { Button, Form, DatePicker, InputNumber, Input, Modal } from "antd";
 import moment from "moment";
 
-const { RangePicker } = DatePicker;
-
 export default function OfferModal({ visible, onCancel, onOk, title, post }) {
   const initialValues = {
     comment: "",
     initialDeposit: post.initialDeposit || 0,
     share: post.share,
     thresholdETH: post.thresholdETH || null,
-    period: [moment(post.startDate * 1000), moment(post.endDate * 1000)],
+    endDate: moment(post.endDate * 1000),
     ytMinViewCount: post.ytMinViewCount,
     ytMinSubscriberCount: post.ytMinSubscriberCount,
+    twitterMinFollowers: post.twitterMinFollowers,
   };
   return (
     <Modal visible={visible} title={title} footer={null} onCancel={onCancel}>
@@ -36,8 +35,8 @@ export default function OfferModal({ visible, onCancel, onOk, title, post }) {
         <Form.Item name="thresholdETH" label="Threshold funds">
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="period" label="Period">
-          <RangePicker />
+        <Form.Item name="endDate" label="Deadline">
+          <DatePicker />
         </Form.Item>
         {post.ytChannelId && (
           <>
@@ -45,6 +44,13 @@ export default function OfferModal({ visible, onCancel, onOk, title, post }) {
               <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
             </Form.Item>
             <Form.Item name="ytMinSubscriberCount" label="Youtube Subscribers">
+              <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
+            </Form.Item>
+          </>
+        )}
+        {post.twitterUsername && (
+          <>
+            <Form.Item name="twitterMinFollowers" label="Twitter followers">
               <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
             </Form.Item>
           </>
