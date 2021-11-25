@@ -59,24 +59,32 @@ export const MessagingProvider = ({ children = null }) => {
     setChats(previousChats => [...previousChats, chat]);
   };
 
-  const addMessages = (chatId, messages) => {
+  const addMessages = (chatId, messageObjects) => {
     setMessageMap(messageMap => {
       const current = messageMap[chatId] == null ? [] : messageMap[chatId];
-      const parsed = messages.map(message => message.toJSON());
-      console.log(`Add messages ${JSON.stringify(parsed)} to ${JSON.stringify(current)}`);
-      const unread = parsed.reduce((total, { unread, destinatary }) => {
+      const messages = messageObjects.map(message => message.toJSON());
+      console.log(`Add messages ${JSON.stringify(messages)} to ${JSON.stringify(current)}`);
+      const unread = messages.reduce((total, { unread, destinatary }) => {
         return unread && destinatary === myUserId ? total + 1 : total;
       }, 0);
       console.log(`A total of ${unread} unread messages`);
-      if (unread > 0) {
-        setChats(currentChats => {
-          const chat = currentChats.find(({ objectId }) => objectId === chatId);
-          chat.unread += unread;
-          return [...currentChats];
-        });
-      }
 
-      return { ...messageMap, [chatId]: current.concat(parsed) };
+      setChats(currentChats => {
+        const chat = currentChats.find(({ objectId }) => objectId === chatId);
+        const [lastMessage] =
+          messages.length === 0
+            ? [{ createdAt: chat.createdAt }]
+            : messages.sort(({ createdAt: createdAt1 }, { createdAt: createdAt2 }) => createdAt2 - createdAt1);
+        chat.lastMessageDate = lastMessage.createdAt;
+        console.log(`Last message: ${JSON.stringify(lastMessage)}`);
+        if (unread > 0) {
+          chat.unread += unread;
+        }
+
+        return [...currentChats];
+      });
+
+      return { ...messageMap, [chatId]: current.concat(messages) };
     });
   };
 

@@ -81,13 +81,14 @@ export default function ChatView() {
     return sendMessage(message);
   }, [textInputRef, currentChat, messages]);
 
-  console.log(`Display chats ${JSON.stringify(chats)};`);
+  console.log(`Display chats ${JSON.stringify(chats)}`);
   const chatList = chats.map(chat => ({
     id: chat.objectId,
     title: chat.other.username,
     unread: chat.unread,
     avatar: chat.other.profilePicture.url || "https://avatars.dicebear.com/api/male/john.svg?background=%230000ff",
     avatarFlexible: true,
+    date: new Date(chat.lastMessageDate),
   }));
 
   const messageList = messages.map(message => ({
