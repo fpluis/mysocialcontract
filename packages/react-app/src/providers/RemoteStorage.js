@@ -4,7 +4,7 @@ import { useAuthentication, useBlockchain, useLocalStorage } from ".";
 import { ProfileObject, OfferObject, PostObject, ContractObject } from "../classes";
 
 const IPFS_ENDPOINT = "https://ipfs.moralis.io:2053/ipfs";
-const POST_QUERY_LIMIT = 20;
+const POST_QUERY_LIMIT = 8;
 
 export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }, Blockchain = null) => {
   const getAchievements = async ipfsHash => {
@@ -118,6 +118,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
           console.log(`Error saving object,`, error);
         },
       );
+  };
+
+  const countPosts = async () => {
+    const query = new Moralis.Query(PostObject);
+    query.equalTo("status", "active");
+    return query.count();
   };
 
   const getPosts = async ({ status = null, page = 0, authorId = null }) => {
@@ -405,6 +411,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   return {
     putPost,
     setPostStatus,
+    countPosts,
     getPosts,
     getPost,
     putOffer,

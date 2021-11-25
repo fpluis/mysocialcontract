@@ -1,4 +1,4 @@
-import { Row, Col, List, Avatar, Menu, Button, message, Divider, Badge } from "antd";
+import { Row, Col, List, Avatar, Menu, Button, message, Divider, Badge, Pagination } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, Switch, Route, useLocation } from "react-router-dom";
 import { useAuthentication, useMyContracts, useRemoteStorage } from "../providers";
@@ -22,6 +22,14 @@ export default function PostsView() {
   const [page, setPage] = useState(0);
   const [route, setRoute] = useState("/posts/");
   const [myOffers, setMyOffers] = useState([]);
+  const [postCount, setPostCount] = useState(0);
+
+  useMemo(() => {
+    remoteStorage.countPosts().then(count => {
+      console.log(`Total posts: ${count}`);
+      setPostCount(count);
+    });
+  }, [remoteStorage]);
 
   const createPost = async props => {
     console.log(`Props: ${JSON.stringify(props)}`);
@@ -47,7 +55,7 @@ export default function PostsView() {
   }, [contractEvent, route]);
 
   useMemo(async () => {
-    const posts = await remoteStorage.getPosts({ ...params, status: "active", page });
+    const posts = await remoteStorage.getPosts({ ...params, status: "active", page: page - 1 });
     setPosts(posts);
   }, [params, page]);
 
@@ -174,6 +182,14 @@ export default function PostsView() {
                   );
                 }}
               ></List>
+              <Pagination
+                defaultCurrent={1}
+                defaultPageSize={8}
+                onChange={page => {
+                  setPage(page);
+                }}
+                total={postCount}
+              ></Pagination>
             </Col>
             <Col span={12}>
               <Switch>
