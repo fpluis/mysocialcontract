@@ -23,13 +23,14 @@ contract Promotion is ChainlinkClient {
         uint256 _ytSubs,
         uint256 _twitterFollowers
     );
-    event OnSuccess();
+    event OnSuccess(uint256 balance);
     event Withdraw(uint256 amount, address withdrawer);
 
     address private oracle;
     bytes32 private jobId;
     uint256 private fee;
 
+    uint256 public balanceAtEnd;
     uint256 public initialDeposit;
     uint256 public thresholdETH;
     // uint256 public startDate;
@@ -107,6 +108,7 @@ contract Promotion is ChainlinkClient {
         // twitterUsername = "-";
         // twitterMinFollowers = 0;
         twitterFollowers = 0;
+        balanceAtEnd = 0;
     }
 
     receive() external payable {}
@@ -160,6 +162,11 @@ contract Promotion is ChainlinkClient {
     }
 
     function checkConditions() external {
+        uint256 gracePeriodEnd = endDate + 24 * 60 * 60 seconds;
+        require(
+            block.timestamp < gracePeriodEnd,
+            "Conditions can only be updated until the grace period is over"
+        );
         bool requestYoutube = keccak256(abi.encodePacked(ytChannelId)) !=
             keccak256(abi.encodePacked("-"));
         bool requestTwitter = keccak256(abi.encodePacked(twitterUsername)) !=
@@ -188,7 +195,8 @@ contract Promotion is ChainlinkClient {
             (twitterMinFollowers == 0 || twitterFollowers > twitterMinFollowers)
         ) {
             isSuccessful = true;
-            emit OnSuccess();
+            balanceAtEnd = balance;
+            emit OnSuccess(balanceAtEnd);
         }
     }
 

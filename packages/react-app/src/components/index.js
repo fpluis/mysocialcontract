@@ -8,3 +8,4 @@ export { default as OfferModal } from "./OfferModal";
 export { default as OfferList } from "./OfferList";
 export { default as Description } from "./Description";
 export { default as Conditions } from "./Conditions";
+export { default as ProfileBadge } from "./ProfileBadge";

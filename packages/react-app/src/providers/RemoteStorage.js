@@ -3,9 +3,16 @@ import React, { useContext } from "react";
 import { useAuthentication, useBlockchain, useLocalStorage } from ".";
 import { ProfileObject, OfferObject, PostObject, ContractObject } from "../classes";
 
+const IPFS_ENDPOINT = "https://ipfs.moralis.io:2053/ipfs";
 const POST_QUERY_LIMIT = 20;
 
 export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }, Blockchain = null) => {
+  const getAchievements = async ipfsHash => {
+    const url = `${IPFS_ENDPOINT}/${ipfsHash}`;
+    const response = await fetch(url);
+    return response.json();
+  };
+
   const getProfile = async userId => {
     const query = new Moralis.Query(ProfileObject);
     let profile;
@@ -28,6 +35,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     console.log(`Profile picture: ${JSON.stringify(picture)}`);
     if (picture) {
       props.profilePicture = picture.url();
+    }
+
+    const achievementsFile = profile.get("achievementsFile");
+    if (achievementsFile) {
+      const hash = achievementsFile.hash();
+      props.achievements = await getAchievements(hash);
     }
 
     return props;
@@ -243,27 +256,49 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     return offersWithAuthor;
   };
 
-  const putContract = async ({ contractAddress, ownerId, providerId }) => {
-    const contract = new ContractObject();
+  const putContract = async ({ contractAddress, ownerId, providerId, ytChannelId, twitterUsername }) => {
+    console.log(
+      `Creating contract with ${JSON.stringify({
+        contractAddress,
+        ownerId,
+        providerId,
+        ytChannelId,
+        twitterUsername,
+      })}`,
+    );
+    const contract = new ContractObject({ contractAddress, ownerId, providerId });
     const acl = new Moralis.ACL();
     acl.setPublicReadAccess(true);
     acl.setWriteAccess(Authentication.profile.userId, true);
     contract.setACL(acl);
-    return contract
-      .save({
-        contractAddress,
-        ownerId,
-        providerId,
-      })
-      .then(
-        async offer => {
-          console.log(`Object saved successfully, result`, offer);
-          return offer;
-        },
-        error => {
-          console.log(`Error saving object,`, error);
-        },
+    if (ytChannelId) {
+      const { viewCount, subscriberCount } = await Moralis.Cloud.run("getYoutubeStatistics", {
+        channelId: ytChannelId,
+      });
+      console.log(
+        `YT Statistics for contract channel ${ytChannelId}: ${JSON.stringify({ viewCount, subscriberCount })}`,
       );
+      contract.set("initialYoutubeViews", viewCount);
+      contract.set("initialYoutubeSubs", subscriberCount);
+    }
+
+    if (twitterUsername) {
+      const initialTwitterFollowers = await Moralis.Cloud.run("getTwitterFollowers", {
+        username: twitterUsername,
+      });
+      console.log(`Twitter followers for ${twitterUsername}: ${initialTwitterFollowers}`);
+      contract.set("initialTwitterFollowers", initialTwitterFollowers);
+    }
+
+    return contract.save().then(
+      async result => {
+        console.log(`Contract saved successfully, result`, result);
+        return result;
+      },
+      error => {
+        console.log(`Error saving object,`, error);
+      },
+    );
   };
 
   const queryByOwner = ownerId => {
@@ -296,11 +331,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     if (channelId !== "-") {
       console.log(`Get statistics for ${channelId}`);
       try {
-        const statistics = await Moralis.Cloud.run("getYoutubeStatistics", {
+        const { viewCount, subscriberCount } = await Moralis.Cloud.run("getYoutubeStatistics", {
           channelId,
         });
-        console.log(`YT Statistics for contract channel ${channelId}: ${JSON.stringify(statistics)}`);
-        const { viewCount, subscriberCount } = statistics;
+        console.log(
+          `YT Statistics for contract channel ${channelId}: ${JSON.stringify({ viewCount, subscriberCount })}`,
+        );
         contract.set("liveYtViewCount", viewCount);
         contract.set("liveYtSubCount", subscriberCount);
       } catch (error) {

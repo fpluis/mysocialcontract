@@ -85,6 +85,7 @@ export const Blockchain = {
     console.log(contract);
     const onChainProps = [
       { type: "weinumber", name: "initialDeposit" },
+      { type: "weinumber", name: "balanceAtEnd" },
       { type: "weinumber", name: "thresholdETH" },
       { type: "number", name: "endDate" },
       { type: "number", name: "share" },

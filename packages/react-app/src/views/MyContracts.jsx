@@ -1,8 +1,7 @@
-import { List, Button, Avatar, Col, Row, Descriptions, Progress, Divider, Statistic } from "antd";
+import { List, Button, Col, Row, Descriptions, Progress, Divider, Statistic } from "antd";
 import React from "react";
-import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
-import { Conditions } from "../components";
+import { Conditions, ProfileBadge } from "../components";
 import { useAuthentication, useBlockchain, useMyContracts } from "../providers";
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
@@ -78,13 +77,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
   return (
     <List.Item key={key} style={{ marginTop: "32px" }}>
       <List.Item.Meta
-        avatar={
-          <Avatar
-            size={32}
-            alt={owner.username}
-            src={owner.profilePicture || <Blockies seed={owner.ethAddress.toLowerCase()} />}
-          ></Avatar>
-        }
+        avatar={<ProfileBadge {...owner} />}
         title={
           <Col span={24}>
             <Row>

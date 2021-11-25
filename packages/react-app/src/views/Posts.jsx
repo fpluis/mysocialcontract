@@ -2,11 +2,11 @@ import { Row, Col, List, Avatar, Menu, Button, message, Divider, Badge } from "a
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, Switch, Route, useLocation } from "react-router-dom";
 import { useAuthentication, useMyContracts, useRemoteStorage } from "../providers";
-import Blockies from "react-blockies";
-import { PostDetail, PostEditorModal, OfferList } from "../components";
+import { PostDetail, PostEditorModal, OfferList, ProfileBadge } from "../components";
 import { MyContracts, MyRequests } from "./index";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import ReactTimeAgo from "react-time-ago";
+// import Blockies from "react-blockies";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
 
 export default function PostsView() {
@@ -148,20 +148,23 @@ export default function PostsView() {
           <Row style={{ marginTop: "16px" }}>
             <Col span={12}>
               <List
+                style={{ marginLeft: "32px" }}
                 itemLayout="horizontal"
                 dataSource={posts}
                 renderItem={post => {
                   const { author, title, createdAt } = post;
+                  console.log(`Author: ${JSON.stringify(author)}`);
                   return (
                     <Link to={`/posts/${post.objectId}`}>
                       <List.Item>
                         <List.Item.Meta
                           avatar={
-                            <Avatar
-                              size={32}
-                              alt={author.username}
-                              src={author.profilePicture || <Blockies seed={author.ethAddress.toLowerCase()} />}
-                            ></Avatar>
+                            // <Avatar
+                            //   size={32}
+                            //   alt={author.username}
+                            //   src={author.profilePicture || <Blockies seed={author.ethAddress.toLowerCase()} />}
+                            // ></Avatar>
+                            <ProfileBadge {...author} />
                           }
                           title={title}
                           description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}

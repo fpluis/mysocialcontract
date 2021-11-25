@@ -1,10 +1,9 @@
-import { List, Button, Avatar, Row, Tooltip, Space, Col } from "antd";
+import { List, Button, Row, Tooltip, Space, Col } from "antd";
 import React from "react";
-import Blockies from "react-blockies";
 import ReactTimeAgo from "react-time-ago";
 import { MessageOutlined, CloseOutlined, FormOutlined } from "@ant-design/icons";
 import "./OfferList.css";
-import { Conditions } from "./index";
+import { Conditions, ProfileBadge } from "./index";
 import { Link } from "react-router-dom";
 
 export default function OfferList({ offers, post, onRejectOffer, onComposeContract }) {
@@ -58,13 +57,7 @@ export default function OfferList({ offers, post, onRejectOffer, onComposeContra
         return (
           <List.Item key={key} extra={post && post.status !== "signed" && <Space>{actions}</Space>}>
             <List.Item.Meta
-              avatar={
-                <Avatar
-                  size={32}
-                  alt={provider.username}
-                  src={provider.profilePicture || <Blockies seed={provider.ethAddress.toLowerCase()} />}
-                ></Avatar>
-              }
+              avatar={<ProfileBadge {...provider} />}
               title={provider.username}
               description={
                 <Col span={24}>

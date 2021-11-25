@@ -1,0 +1,17 @@
+.achievement-item {
+  font-size: 1rem;
+  /* margin-left: 4px; */
+  /* margin-right: 4px; */
+}
+
+.achievement-item .ant-statistic-content {
+  font-size: 1.2rem;
+}
+
+.achievement-item .ant-statistic {
+  text-align: center;
+}
+
+.achievement-item .ant-statistic-title {
+  height: 44px;
+}

@@ -1,11 +1,10 @@
-import { Button, Col, Row, Card, Avatar, message } from "antd";
+import { Button, Col, Row, Card, message } from "antd";
 import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
-import { Description, OfferModal, Conditions } from "./index";
+import { Description, OfferModal, Conditions, ProfileBadge } from "./index";
 import { Link } from "react-router-dom";
-import Blockies from "react-blockies";
 
 const { Meta } = Card;
 
@@ -38,14 +37,7 @@ export default function PostDetail({ post }) {
       <h1>{title}</h1>
       <Card size="small">
         <Meta
-          avatar={
-            <Avatar
-              className={`icon ${currentTheme}`}
-              size={38}
-              alt={author.username}
-              src={author.profilePicture || <Blockies size={38} seed={author.ethAddress.toLowerCase()} />}
-            ></Avatar>
-          }
+          avatar={<ProfileBadge {...author} />}
           title={author.username}
           description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
         />

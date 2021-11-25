@@ -71,7 +71,7 @@ export default function ProfileView() {
 
   useMemo(() => {
     if (user.authenticated() && profile.userId) {
-      const { username = "", description = "", profilePicture = { url: "" } } = profile;
+      const { username = "", description = "", profilePicture = { url: "" }, achievements = {} } = profile;
       console.log(`Setting props from ${JSON.stringify(profile)}`);
       const props = { username, description };
 
@@ -142,23 +142,29 @@ export default function ProfileView() {
                   offset: 6,
                 }}
               >
-                <Button type="primary" htmlType="submit">
-                  Submit
-                </Button>
+                <Col span={24}>
+                  <Row>
+                    <Button type="primary" htmlType="submit">
+                      Submit
+                    </Button>
+                  </Row>
+                  <Row>
+                    <Button
+                      style={{ backgroundColor: "#d50000", marginTop: "64px", color: "white" }}
+                      onClick={async () => {
+                        await logOut();
+                        message.success("Logged out. Redirecting to homepage.");
+                        setTimeout(() => {
+                          window.location.replace(new URL(document.URL).origin);
+                        }, 1000);
+                      }}
+                    >
+                      Log out
+                    </Button>
+                  </Row>
+                </Col>
               </Form.Item>
             </Form>
-            <Button
-              style={{ backgroundColor: "#d50000" }}
-              onClick={async () => {
-                await logOut();
-                message.success("Logged out. Redirecting to homepage.");
-                setTimeout(() => {
-                  window.location.replace(new URL(document.URL).origin);
-                }, 1000);
-              }}
-            >
-              Log out
-            </Button>
           </Col>
         </Row>
       </Col>

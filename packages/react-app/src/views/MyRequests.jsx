@@ -1,10 +1,9 @@
-import { List, Button, Col, Modal, Row, Avatar, Space, message } from "antd";
+import { List, Button, Col, Modal, Row, Space, message } from "antd";
 import React, { useMemo, useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useBlockchain, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
-import Blockies from "react-blockies";
-import { OfferList, PostEditorModal, Description, Conditions } from "../components/index";
+import { OfferList, PostEditorModal, Description, Conditions, ProfileBadge } from "../components/index";
 import { CloseOutlined, EditOutlined } from "@ant-design/icons";
 import moment from "moment";
 
@@ -34,14 +33,7 @@ const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract, o
       }
     >
       <List.Item.Meta
-        avatar={
-          <Avatar
-            className={`icon ${currentTheme}`}
-            size={38}
-            alt={author.username}
-            src={author.profilePicture || <Blockies size={38} seed={author.ethAddress.toLowerCase()} />}
-          ></Avatar>
-        }
+        avatar={<ProfileBadge {...author} />}
         title={title}
         description={
           <Col span={24}>
@@ -123,6 +115,8 @@ export default function MyRequests() {
         contractAddress,
         ownerId: currentPost.author.userId,
         providerId: currentOffer.author.userId,
+        ytChannelId,
+        twitterUsername,
       }),
       remoteStorage.setPostStatus(post.objectId, "signed"),
       remoteStorage.setOfferStatus(currentOffer.objectId, "accepted"),
