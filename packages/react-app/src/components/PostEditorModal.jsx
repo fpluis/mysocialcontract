@@ -14,6 +14,8 @@ export default function PostEditorModal({
 }) {
   const [isSearching, setIsSearching] = useState(false);
   const [form] = Form.useForm();
+  const [hasAddedYtChannel, setHasAddedYtChannel] = useState(false);
+  const [hasAddedTwitterUser, setHasAddedTwitterUser] = useState(false);
   return (
     <Modal visible={visible} title={title} footer={null} onCancel={onCancel}>
       <Form
@@ -108,19 +110,86 @@ export default function PostEditorModal({
           ></Input.Search>
         </Form.Item>
         <Form.Item name="ytChannelId" label="Youtube channel id">
-          <Input placeholder="Use the search above or input directly" />
+          <Input
+            placeholder="Use the search above or input directly"
+            onChange={event => {
+              const { value } = event.target;
+              console.log(`Value, `, value);
+              if (value === "") {
+                setHasAddedYtChannel(false);
+              } else {
+                setHasAddedYtChannel(true);
+              }
+            }}
+          />
         </Form.Item>
-        <Form.Item name="ytMinViewCount" label="Youtube Views">
-          <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
+        <Form.Item
+          rules={[
+            {
+              required: hasAddedYtChannel,
+              message: "If you specify a Youtube channel, you need to set a minimum Youtube view count (can be 0)",
+            },
+          ]}
+          name="ytMinViewCount"
+          label="Youtube Views"
+        >
+          <InputNumber
+            disabled={!hasAddedYtChannel}
+            precision={0}
+            min={0}
+            placeholder="When the contract ends"
+            style={{ width: "100%" }}
+          />
         </Form.Item>
-        <Form.Item name="ytMinSubscriberCount" label="Youtube Subscribers">
-          <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
+        <Form.Item
+          rules={[
+            {
+              required: hasAddedYtChannel,
+              message: "If you specify a Youtube channel, you need to set a minimum Youtube sub count (can be 0)",
+            },
+          ]}
+          name="ytMinSubscriberCount"
+          label="Youtube Subscribers"
+        >
+          <InputNumber
+            disabled={!hasAddedYtChannel}
+            precision={0}
+            min={0}
+            placeholder="When the contract ends"
+            style={{ width: "100%" }}
+          />
         </Form.Item>
         <Form.Item name="twitterUsername" label="Twitter username">
-          <Input placeholder="The Twitter handle without the '@' i.e. 'elonmusk'" />
+          <Input
+            placeholder="The Twitter handle without the '@' i.e. 'elonmusk'"
+            onChange={event => {
+              const { value } = event.target;
+              console.log(`Value, `, value);
+              if (value === "") {
+                setHasAddedTwitterUser(false);
+              } else {
+                setHasAddedTwitterUser(true);
+              }
+            }}
+          />
         </Form.Item>
-        <Form.Item name="twitterMinFollowers" label="Twitter followers">
-          <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
+        <Form.Item
+          rules={[
+            {
+              required: hasAddedTwitterUser,
+              message: "If you specify a Twitter username, you need to set a minimum Twitter followers (can be 0)",
+            },
+          ]}
+          name="twitterMinFollowers"
+          label="Twitter followers"
+        >
+          <InputNumber
+            disabled={!hasAddedTwitterUser}
+            precision={0}
+            min={0}
+            placeholder="When the contract ends"
+            style={{ width: "100%" }}
+          />
         </Form.Item>
 
         <Form.Item
