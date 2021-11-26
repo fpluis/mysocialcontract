@@ -67,7 +67,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     acl.setPublicReadAccess(true);
     acl.setWriteAccess(authorId, true);
     post.setACL(acl);
-    // const [start, end] = period;
+    post.unset("author");
     return post
       .save({
         status: "active",
@@ -76,7 +76,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         description,
         initialDeposit,
         thresholdETH,
-        // startDate: start.unix(),
         endDate: endDate.unix(),
         share,
         ytChannelId,
@@ -99,6 +98,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
   const setPostStatus = (id, status) => {
     const post = new PostObject();
+    post.unset("author");
     return post
       .save({
         id,
@@ -173,13 +173,13 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     ytMinSubscriberCount,
     twitterMinFollowers,
   }) => {
-    // const [start, end] = period;
     const offer = new OfferObject();
     const acl = new Moralis.ACL();
     acl.setPublicReadAccess(true);
     // Only the user who receives the offer can modify it
     acl.setWriteAccess(authorId, true);
     offer.setACL(acl);
+    offer.unset("author");
     return offer
       .save({
         status: "active",
@@ -188,7 +188,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         postId,
         initialDeposit,
         thresholdETH,
-        // startDate: start.unix(),
         endDate: endDate.unix(),
         share,
         ytMinViewCount,
@@ -208,6 +207,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   const setOfferStatus = (id, status) => {
     console.log(`Setting offer status of ${id} as ${status}`);
     const offer = new OfferObject();
+    offer.unset("author");
     return offer
       .save({
         id,

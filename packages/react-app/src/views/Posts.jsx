@@ -11,11 +11,9 @@ import ReactTimeAgo from "react-time-ago";
 
 export default function PostsView() {
   const location = useLocation();
-  const { profile: myProfile } = useAuthentication();
+  const { notifications, setNotification, profile: myProfile } = useAuthentication();
   const remoteStorage = useRemoteStorage();
   const [isPostModalVisible, setCreatePostModalVisible] = useState(location.search === "?create");
-  const [showContractNotification, setShowContractNotification] = useState(false);
-  const { event: contractEvent, setEvent: setContractEvent } = useMyContracts();
   const [posts, setPosts] = useState([]);
   const [params, setParams] = useState({});
   const [page, setPage] = useState(0);
@@ -36,14 +34,24 @@ export default function PostsView() {
   };
 
   useEffect(() => {
-    setRoute(window.location.hash.replace(/^#/, ""));
-  }, [setRoute, window.location.hash]);
-
-  useEffect(() => {
-    if (!contractEvent.seen && route !== "/me/contracts") {
-      setShowContractNotification(true);
+    const newRoute = window.location.hash.replace(/^#/, "");
+    console.log(`New route: ${JSON.stringify(newRoute)}`);
+    setRoute(newRoute);
+    if (newRoute === "/me/offers" && notifications.offers === true) {
+      console.log(`@offers`);
+      setNotification("offers", false);
     }
-  }, [contractEvent, route]);
+
+    if (newRoute === "/me/requests" && notifications.requests === true) {
+      console.log(`@requests`);
+      setNotification("requests", false);
+    }
+
+    if (newRoute === "/me/contracts" && notifications.contracts === true) {
+      console.log(`@contracts`);
+      setNotification("contracts", false);
+    }
+  }, [setRoute, notifications, window.location.hash]);
 
   useMemo(async () => {
     const posts = await remoteStorage.getPosts({ ...params, status: "active", page: page - 1 });
@@ -63,45 +71,21 @@ export default function PostsView() {
     <>
       <Menu style={{ textAlign: "center" }} selectedKeys={[route]} mode="horizontal">
         <Menu.Item key="/posts/">
-          <Link
-            onClick={() => {
-              setRoute("/posts/");
-            }}
-            to="/posts/"
-          >
-            All
-          </Link>
+          <Link to="/posts/">All</Link>
         </Menu.Item>
         <Menu.Item key="/me/requests">
-          <Link
-            onClick={() => {
-              setRoute("/me/requests");
-            }}
-            to="/me/requests"
-          >
-            My requests
+          <Link to="/me/requests">
+            <Badge dot={notifications.requests}>My requests</Badge>
           </Link>
         </Menu.Item>
         <Menu.Item key="/me/offers">
-          <Link
-            onClick={() => {
-              setRoute("/me/offers");
-            }}
-            to="/me/offers"
-          >
-            Offers I have made
+          <Link to="/me/offers">
+            <Badge dot={notifications.offers}>Offers I have made</Badge>
           </Link>
         </Menu.Item>
         <Menu.Item key="/me/contracts">
-          <Link
-            onClick={() => {
-              setRoute("/me/contracts");
-              setContractEvent({ seen: true });
-              setShowContractNotification(false);
-            }}
-            to="/me/contracts"
-          >
-            <Badge dot={showContractNotification}>My contracts</Badge>
+          <Link to="/me/contracts">
+            <Badge dot={notifications.contracts}>My contracts</Badge>
           </Link>
         </Menu.Item>
         <Menu.Item key="/posts/create">
@@ -155,14 +139,7 @@ export default function PostsView() {
                     <Link to={`/posts/${post.objectId}`}>
                       <List.Item>
                         <List.Item.Meta
-                          avatar={
-                            // <Avatar
-                            //   size={32}
-                            //   alt={author.username}
-                            //   src={author.profilePicture || <Blockies seed={author.ethAddress.toLowerCase()} />}
-                            // ></Avatar>
-                            <ProfileBadge {...author} />
-                          }
+                          avatar={<ProfileBadge {...author} />}
                           title={title}
                           description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
                         />

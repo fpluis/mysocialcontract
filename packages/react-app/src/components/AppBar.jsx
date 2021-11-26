@@ -8,11 +8,10 @@ import { useThemeSwitcher } from "react-css-theme-switcher";
 import "./AppBar.css";
 
 export default function AppBar() {
-  const { user, profile, login } = useAuthentication();
+  const { user, profile, notifications, login } = useAuthentication();
   const { currentTheme } = useThemeSwitcher();
-  const { event: contractEvent } = useMyContracts();
   const { chats } = useMessaging();
-  const [seenContracts, setSeenContracts] = useState(false);
+  // const [seenContracts, setSeenContracts] = useState(false);
   // const [seenChat, setSeenChat] = useState(false);
   const [showContractNotification, setShowContractNotification] = useState(false);
   const [showChatNotification, setShowChatNotification] = useState(false);
@@ -27,12 +26,15 @@ export default function AppBar() {
   }, [setRoute, window.location.hash]);
 
   useEffect(() => {
-    if (!contractEvent.seen && !seenContracts && !route.startsWith("/posts") && !route.startsWith("/me")) {
-      // console.log(`Show appbar contract notification`);
+    console.log(`Notifications: ${JSON.stringify(notifications)};`);
+    if (
+      (notifications.contracts === true || notifications.requests === true || notifications.offers === true) &&
+      !route.startsWith("/posts") &&
+      !route.startsWith("/me")
+    ) {
       setShowContractNotification(true);
-      setSeenContracts(false);
     }
-  }, [contractEvent, route]);
+  }, [notifications, route]);
 
   useEffect(() => {
     if (chats.some(({ unread }) => unread > 0) && !route.startsWith("/chat/")) {
@@ -59,7 +61,7 @@ export default function AppBar() {
                   <FileTextOutlined
                     className={`icon ${currentTheme}`}
                     onClick={() => {
-                      setSeenContracts(true);
+                      // setSeenContracts(true);
                       setShowContractNotification(false);
                     }}
                   />

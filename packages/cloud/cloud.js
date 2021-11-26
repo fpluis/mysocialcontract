@@ -104,3 +104,39 @@ Moralis.Cloud.define("getTwitterFollowers", async (request) => {
   const twitterApiKey = config.get("TWITTER_API_KEY");
   return getTwitterFollowers(twitterApiKey, username);
 });
+
+const setNotification = (userId, notificationName) => {
+  const logger = Moralis.Cloud.getLogger();
+  logger.info(
+    `Setting notification ${notificationName} for ${JSON.stringify(userId)}`
+  );
+  const query = new Moralis.Query("Notifications");
+  query.equalTo("userId", userId);
+  return query
+    .first()
+    .then((notifications) => {
+      notifications.set(notificationName, true);
+      return notifications.save();
+    })
+    .catch(function (error) {
+      logger.error("Got an error " + error.code + " : " + error.message);
+    });
+};
+
+Moralis.Cloud.afterSave("Contract", (request) =>
+  Promise.all([
+    setNotification(request.object.get("ownerId"), "contracts"),
+    setNotification(request.object.get("providerId"), "contracts"),
+  ])
+);
+
+Moralis.Cloud.afterSave("Offer", (request) =>
+  new Moralis.Query("Post")
+    .get(request.object.get("postId"))
+    .then((post) =>
+      Promise.all([
+        setNotification(request.object.get("authorId"), "offers"),
+        setNotification(post.get("authorId"), "requests"),
+      ])
+    )
+);

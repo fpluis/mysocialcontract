@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { MORALIS_SERVER_ID, MORALIS_APP_ID } from "../constants";
 import Moralis from "moralis";
-import { ProfileObject } from "../classes";
+import { NotificationsObject, ProfileObject } from "../classes";
 
 const IPFS_ENDPOINT = "https://ipfs.moralis.io:2053/ipfs";
 Moralis.start({ serverUrl: MORALIS_SERVER_ID, appId: MORALIS_APP_ID });
@@ -12,11 +12,35 @@ export const AuthenticationProvider = ({ children = null }) => {
   let user = Moralis.User.current() || { get: () => null, authenticated: () => false };
   const [profile, setProfile] = useState({ get: () => null, toJSON: () => ({}), updatedAt: null });
   const [updatedAt, setUpdatedAt] = useState(profile.get("updatedAt") || "");
+  const [notifications, setNotifications] = useState({
+    set: () => {},
+    save: () => {},
+    toJSON: () => ({ userId: "", requests: false, offers: false, contracts: false }),
+  });
+  const [notificationsSubscription, setNotificationsSubscription] = useState();
 
   const getProfile = userId => {
     const query = new Moralis.Query(ProfileObject);
     query.equalTo("userId", userId);
     return query.first();
+  };
+
+  const getNotifications = userId => {
+    const query = new Moralis.Query(NotificationsObject);
+    query.equalTo("userId", userId);
+    return query.first();
+  };
+
+  const setNotification = (notificationName, value = false) => {
+    notifications.set(notificationName, value);
+    setNotifications(notifications);
+    return notifications.save();
+  };
+
+  const subscribeToNotifications = userId => {
+    const query = new Moralis.Query(NotificationsObject);
+    query.equalTo("userId", userId);
+    return query.subscribe();
   };
 
   useEffect(async () => {
@@ -32,6 +56,18 @@ export const AuthenticationProvider = ({ children = null }) => {
 
         setProfile(profile);
       }
+
+      const notifications = await getNotifications(user.id);
+      setNotifications(notifications);
+      if (notificationsSubscription) {
+        notificationsSubscription.unsubscribe();
+      }
+
+      const subscription = await subscribeToNotifications(user.id);
+      subscription.on("update", notifications => {
+        setNotifications(notifications);
+      });
+      setNotificationsSubscription(subscription);
     }
   }, [user]);
 
@@ -51,6 +87,18 @@ export const AuthenticationProvider = ({ children = null }) => {
           acl.setWriteAccess(user.id, true);
           profile.setACL(acl);
           await profile.save();
+        }
+
+        let notifications = await getNotifications(user.id);
+        if (notifications == null) {
+          notifications = new NotificationsObject({
+            requests: false,
+            offers: false,
+            contracts: false,
+            userId: user.id,
+          });
+          setNotifications(notifications);
+          notifications.save();
         }
 
         console.log("Authenticated user's profile:", profile);
@@ -112,6 +160,8 @@ export const AuthenticationProvider = ({ children = null }) => {
       value={{
         user,
         profile: profile.toJSON(),
+        notifications: notifications.toJSON(),
+        setNotification,
         updatedAt,
         login,
         setUserAttribute,
