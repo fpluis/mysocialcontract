@@ -1,6 +1,5 @@
-import { DatePicker, Descriptions } from "antd";
+import { Descriptions } from "antd";
 import React from "react";
-import moment from "moment";
 
 export default function Conditions({
   layout = "horizontal",
@@ -23,9 +22,7 @@ export default function Conditions({
       <Descriptions.Item label="Initial deposit">{initialDeposit}</Descriptions.Item>
       <Descriptions.Item label="Provider's share">{`${share}%`}</Descriptions.Item>
       {thresholdETH && <Descriptions.Item label="Threshold gains (ETH)">{thresholdETH}</Descriptions.Item>}
-      <Descriptions.Item label="Deadline">
-        <DatePicker defaultValue={moment(endDate * 1000)} disabled />
-      </Descriptions.Item>
+      <Descriptions.Item label="Deadline">{new Date(endDate * 1000).toLocaleDateString()}</Descriptions.Item>
       {ytChannelId && ytChannelId !== "-" && (
         <Descriptions.Item label="Youtube Channel Id">
           {ytChannelId} (<a href={`https://www.youtube.com/channel/${ytChannelId}`}>Link to the channel</a>)

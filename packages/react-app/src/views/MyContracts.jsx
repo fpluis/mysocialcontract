@@ -192,6 +192,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
           </Descriptions.Item>
         )}
       </Descriptions>
+      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
     </List.Item>
   );
 };
