@@ -158,7 +158,9 @@ contract Promotion is ChainlinkClient {
         // the result will be a float, cast to uint256 and thus become 0
         uint256 amount = (balance * userShare) / 100;
         emit Withdraw(amount, msg.sender);
-        payable(provider).transfer(amount);
+        // payable(msg.sender).transfer(amount);
+        // msg.sender.transfer(amount)
+        msg.sender.call{value: amount}("");
     }
 
     function checkConditions() external {
