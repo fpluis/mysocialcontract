@@ -22,7 +22,6 @@ export const AuthenticationProvider = ({ children = null }) => {
   useEffect(async () => {
     if (user.authenticated()) {
       const profile = await getProfile(user.id);
-      console.log(`Profile in db:`, profile);
       if (profile != null) {
         const achievementsFile = profile.get("achievementsFile");
         if (achievementsFile) {
@@ -65,7 +64,6 @@ export const AuthenticationProvider = ({ children = null }) => {
   // const btoa = string => Buffer.from(string).toString("base64");
 
   const setUserAttribute = async (prop, value, isFile = false, isIPFS = false) => {
-    console.log(`Set user's ${prop} for profile`, profile);
     let actualValue = value;
     if (isFile) {
       if (isIPFS) {
@@ -99,9 +97,9 @@ export const AuthenticationProvider = ({ children = null }) => {
   };
 
   const updateUser = async () => {
+    profile.unset("achievements");
     await profile.save().then(profile => {
       setUpdatedAt(profile.get("updatedAt"));
-      console.log(`New updated at: ${profile.get("updatedAt")}`);
     });
   };
 
