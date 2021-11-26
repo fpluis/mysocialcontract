@@ -12,7 +12,6 @@ import ReactTimeAgo from "react-time-ago";
 export default function PostsView() {
   const location = useLocation();
   const { profile: myProfile } = useAuthentication();
-  console.log(`My profile: ${JSON.stringify(myProfile)}; Location: ${JSON.stringify(location)}`);
   const remoteStorage = useRemoteStorage();
   const [isPostModalVisible, setCreatePostModalVisible] = useState(location.search === "?create");
   const [showContractNotification, setShowContractNotification] = useState(false);
@@ -26,30 +25,22 @@ export default function PostsView() {
 
   useMemo(() => {
     remoteStorage.countPosts().then(count => {
-      console.log(`Total posts: ${count}`);
       setPostCount(count);
     });
   }, [remoteStorage]);
 
   const createPost = async props => {
-    console.log(`Props: ${JSON.stringify(props)}`);
     const post = await remoteStorage.putPost(props);
     message.success("Post successfully created!");
-    setPosts([...posts, post.toJSON()]);
+    setPosts(posts => [post.toJSON(), ...posts]);
   };
 
   useEffect(() => {
-    console.log(`Window route ${window.location.hash.replace(/^#/, "")}`);
     setRoute(window.location.hash.replace(/^#/, ""));
   }, [setRoute, window.location.hash]);
 
-  // const { currentTheme } = useThemeSwitcher();
-  // const inverseThemeColor = currentTheme === "light" ? "#222222" : "white";
-
   useEffect(() => {
-    console.log(`Run effect with contract seen? ${contractEvent.seen}; route: ${route}`);
     if (!contractEvent.seen && route !== "/me/contracts") {
-      console.log(`Show contract notification on menu`);
       setShowContractNotification(true);
     }
   }, [contractEvent, route]);
@@ -60,17 +51,14 @@ export default function PostsView() {
   }, [params, page]);
 
   useMemo(async () => {
-    console.log(`Route: ${route}`);
     if (myProfile.userId) {
       if (route === "/me/offers" && myOffers.length === 0) {
         const offers = await remoteStorage.getOffers({ authorId: myProfile.userId });
         setMyOffers(offers);
-        console.log(`My (${myProfile.userId}) offers: ${JSON.stringify(offers)}`);
       }
     }
   }, [route, remoteStorage.web3Ready, myProfile]);
 
-  console.log(`Posts: ${JSON.stringify(posts)}`);
   return (
     <>
       <Menu style={{ textAlign: "center" }} selectedKeys={[route]} mode="horizontal">
@@ -116,11 +104,13 @@ export default function PostsView() {
             <Badge dot={showContractNotification}>My contracts</Badge>
           </Link>
         </Menu.Item>
-        <Button
-          icon={<PlusCircleOutlined style={{ fontSize: "22px" }} />}
-          onClick={() => setCreatePostModalVisible(true)}
-          style={{ border: "none", verticalAlign: "middle" }}
-        />
+        <Menu.Item key="/posts/create">
+          <Button
+            icon={<PlusCircleOutlined style={{ margin: 0, fontSize: "22px" }} />}
+            onClick={() => setCreatePostModalVisible(true)}
+            style={{ border: "none", verticalAlign: "middle" }}
+          />
+        </Menu.Item>
       </Menu>
 
       <PostEditorModal
@@ -161,7 +151,6 @@ export default function PostsView() {
                 dataSource={posts}
                 renderItem={post => {
                   const { author, title, createdAt } = post;
-                  console.log(`Author: ${JSON.stringify(author)}`);
                   return (
                     <Link to={`/posts/${post.objectId}`}>
                       <List.Item>
