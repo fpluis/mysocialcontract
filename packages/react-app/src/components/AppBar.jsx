@@ -17,29 +17,26 @@ export default function AppBar() {
   const [showContractNotification, setShowContractNotification] = useState(false);
   const [showChatNotification, setShowChatNotification] = useState(false);
   const { ethAddress = "", username = "", profilePicture } = profile;
-  console.log(`Profile picture ${JSON.stringify(profilePicture)}; profile ${JSON.stringify(profile)}`);
   const profilePictureUrl = profilePicture ? profilePicture.url : null;
 
   const [route, setRoute] = useState("/");
 
   useEffect(() => {
-    console.log(`Window route ${window.location.hash.replace(/^#/, "")}`);
+    // console.log(`Window route ${window.location.hash.replace(/^#/, "")}`);
     setRoute(window.location.hash.replace(/^#/, ""));
   }, [setRoute, window.location.hash]);
 
   useEffect(() => {
-    console.log(`Run effect with contract seen? ${contractEvent.seen}; local seen ${seenContracts}; route: ${route}`);
     if (!contractEvent.seen && !seenContracts && !route.startsWith("/posts") && !route.startsWith("/me")) {
-      console.log(`Show appbar contract notification`);
+      // console.log(`Show appbar contract notification`);
       setShowContractNotification(true);
       setSeenContracts(false);
     }
   }, [contractEvent, route]);
 
   useEffect(() => {
-    console.log(`Run effect with chats ${JSON.stringify(chats)}; route: ${route}`);
     if (chats.some(({ unread }) => unread > 0) && !route.startsWith("/chat/")) {
-      console.log(`Show appbar chat notification`);
+      // console.log(`Show appbar chat notification`);
       setShowChatNotification(true);
     }
   }, [chats, route]);

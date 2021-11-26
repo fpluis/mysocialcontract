@@ -28,7 +28,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
     liveTwitterFollowers,
   } = contract;
 
-  console.log(`Render contract ${JSON.stringify(contract)}`);
+  // console.log(`Render contract ${JSON.stringify(contract)}`);
 
   const deadlineInSeconds = contract.endDate;
   const nowInSeconds = new Date().getTime() / 1000;
@@ -67,12 +67,14 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
       <span style={{ color: "#b71c1c" }}>Failed</span>
     );
   const canWithdraw =
-    (myEthAddress === provider.ethAddress && !isProviderPaid && status === "successful") ||
-    (myEthAddress === owner.ethAddress && !isOwnerPaid && ["failed", "successful"].includes(status));
+    (myEthAddress.toLowerCase() === provider.ethAddress.toLowerCase() && !isProviderPaid && status === "successful") ||
+    (myEthAddress.toLowerCase() === owner.ethAddress.toLowerCase() &&
+      !isOwnerPaid &&
+      ["failed", "successful"].includes(status));
 
-  console.log(
-    `My eth address: ${myEthAddress}; provider eth address ${provider.ethAddress}; owner ${owner.ethAddress}; isOwnerPaid ${isOwnerPaid}; isProviderPaid ${isProviderPaid}; status ${status}`,
-  );
+  // console.log(
+  //   `My eth address: ${myEthAddress}; provider eth address ${provider.ethAddress}; owner ${owner.ethAddress}; isOwnerPaid ${isOwnerPaid}; isProviderPaid ${isProviderPaid}; status ${status}`,
+  // );
 
   return (
     <List.Item key={key} style={{ marginTop: "32px" }}>
@@ -98,8 +100,8 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
                   <Button
                     style={{ marginRight: "8px", float: "right" }}
                     onClick={async () => {
-                      const result = await withdraw(contract);
-                      console.log(`Withdraw result: ${JSON.stringify(result)},`, result);
+                      await withdraw(contract);
+                      // console.log(`Withdraw result: ${JSON.stringify(result)},`, result);
                     }}
                   >
                     Withdraw funds
@@ -159,7 +161,6 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
                   style={{ float: "right" }}
                   onClick={async () => {
                     const result = await checkConditions(contract);
-                    console.log(`Check completion result: ${JSON.stringify(result)},`, result);
                   }}
                 >
                   Update state
@@ -204,7 +205,6 @@ export default function ContractList() {
 
   const withdraw = async contract => {
     const result = await blockchain.withdraw(contract.contractAddress);
-    console.log(`Result after withdrawing: ${JSON.stringify(result)}`);
   };
 
   const checkConditions = contract => {
@@ -220,9 +220,9 @@ export default function ContractList() {
 
   const contractsIOwn = contracts.filter(contract => contract.ownerId === myUserId);
   const contractsIProvide = contracts.filter(contract => contract.providerId === myUserId);
-  console.log(
-    `Contracts I (${myUserId}) own: ${JSON.stringify(contractsIOwn)}; provide: ${JSON.stringify(contractsIOwn)}`,
-  );
+  // console.log(
+  //   `Contracts I (${myUserId}) own: ${JSON.stringify(contractsIOwn)}; provide: ${JSON.stringify(contractsIOwn)}`,
+  // );
   return (
     <>
       <h1 style={{ marginLeft: "16px", marginTop: "16px" }}>Contracts I created</h1>

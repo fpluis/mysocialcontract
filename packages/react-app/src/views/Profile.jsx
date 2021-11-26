@@ -4,8 +4,6 @@ import React, { useState, useMemo } from "react";
 import { useAuthentication } from "../providers";
 
 const profilePictureUpload = event => {
-  console.log("Upload event:", event);
-
   if (Array.isArray(event)) {
     return event;
   }
@@ -21,7 +19,6 @@ const getBase64 = (img, callback) => {
 
 const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "picture" }) => {
   const [imageUrl, setImageUrl] = useState(initialImage);
-  console.log(`Render avatar upload; imageUrl ${imageUrl}`);
 
   const beforeUpload = file => {
     if (!["image/jpeg", "image/png"].includes(file.type)) {
@@ -38,7 +35,6 @@ const AvatarUpload = ({ initialImage, customRequest, maxSizeInMB, listType = "pi
   };
 
   const handleChange = info => {
-    console.log(`Change:`, info);
     if (info.file.originFileObj) {
       getBase64(info.file.originFileObj, imageUrl => {
         setImageUrl(imageUrl);
@@ -76,7 +72,6 @@ export default function ProfileView() {
       const props = { username, description };
 
       if (profilePicture && profilePicture.url) {
-        console.log(`Profile url: ${profilePicture.url}`);
         setProfilePicture(profilePicture.url);
       }
 
@@ -99,7 +94,6 @@ export default function ProfileView() {
               labelCol={{ span: 6 }}
               wrapperCol={{ span: 14 }}
               onFinish={async formProps => {
-                console.log(`Form props: ${JSON.stringify(formProps)}`);
                 const { username = "", description = "" } = formProps;
                 if (username.length > 0) {
                   setUserAttribute("username", username);

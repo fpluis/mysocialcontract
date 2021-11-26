@@ -17,14 +17,13 @@ const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
 };
 
 const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract, onRejectOffer }) => {
-  console.log(`Render post ${JSON.stringify(post)}`);
-  const { title, description, createdAt, author, offers = [], status } = post;
+  const { objectId, title, description, createdAt, author, offers = [], status } = post;
   const offersToShow = offers.filter(({ status }) => status !== "rejected");
   const statusMessage =
     status === "active" ? <span>Accepting offers</span> : <span style={{ color: "#388e3c" }}>Signed</span>;
   return (
     <List.Item
-      key={title}
+      key={objectId}
       extra={
         <Space>
           <Button key="edit" icon={<EditOutlined />} onClick={() => onEdit(post)} />
@@ -61,7 +60,6 @@ const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract, o
 };
 
 export default function MyRequests() {
-  console.log(`Render my requests`);
   const blockchain = useBlockchain();
   const remoteStorage = useRemoteStorage();
   const { currentTheme } = useThemeSwitcher();
@@ -72,16 +70,13 @@ export default function MyRequests() {
     if (user.authenticated()) {
       const myPosts = await remoteStorage.getPosts({ status: "active", authorId: myProfile.userId });
       const offers = await remoteStorage.getOffers({ postIds: myPosts.map(({ objectId }) => objectId) });
-      console.log(`All offers found for posts ${JSON.stringify(myPosts)}: ${JSON.stringify(offers)}`);
       const withOffers = myPosts.map(post => {
         const { objectId: postId } = post;
         const postOffers = offers.filter(({ postId: offerPostId }) => offerPostId === postId);
-        console.log(`Post offers: ${JSON.stringify(postOffers)}`);
         post.offers = postOffers;
         return post;
       });
       setRequests(withOffers);
-      console.log(`Updated requests: ${JSON.stringify(withOffers)}`);
     }
   }, [user, myProfile]);
 
@@ -95,8 +90,8 @@ export default function MyRequests() {
     const { initialDeposit, thresholdETH, endDate, share, ytMinViewCount, ytMinSubscriberCount, twitterMinFollowers } =
       offer;
     const conditions = {
-      owner: currentPost.author.ethAddress,
-      provider: currentOffer.author.ethAddress,
+      owner: post.author.ethAddress,
+      provider: offer.author.ethAddress,
       initialDeposit,
       thresholdETH,
       endDate,
@@ -107,19 +102,17 @@ export default function MyRequests() {
       twitterUsername,
       twitterMinFollowers,
     };
-    console.log(`Create contract with conditions: ${JSON.stringify(conditions)}`);
     const contractAddress = await blockchain.createContract(conditions);
-    console.log(`New contract address: ${JSON.stringify(contractAddress)}`);
     return Promise.all([
       remoteStorage.putContract({
         contractAddress,
-        ownerId: currentPost.author.userId,
-        providerId: currentOffer.author.userId,
+        ownerId: post.author.userId,
+        providerId: offer.author.userId,
         ytChannelId,
         twitterUsername,
       }),
       remoteStorage.setPostStatus(post.objectId, "signed"),
-      remoteStorage.setOfferStatus(currentOffer.objectId, "accepted"),
+      remoteStorage.setOfferStatus(offer.objectId, "accepted"),
     ]).then(() => {
       offer.status = "accepted";
       post.status = "signed";
@@ -142,7 +135,6 @@ export default function MyRequests() {
   };
 
   const onComposeContract = (offer, post) => {
-    console.log(`Compose contract with offer ${JSON.stringify(offer)}; post ${JSON.stringify(post)}`);
     setCurrentOffer(offer);
     setCurrentPost(post);
     setIsContractModalVisible(true);
@@ -156,7 +148,6 @@ export default function MyRequests() {
   const onRejectOffer = (offer, post) => {
     const updatedPosts = requests.map(({ objectId, offers, ...props }) => {
       const updatedOffers = offers.filter(({ objectId: offerId }) => offerId !== offer.objectId);
-      console.log(`Updated offers after rejecting ${offer.objectId}: ${JSON.stringify(offers)}`);
       if (objectId === post.objectId) {
         return { ...props, objectId, offers: updatedOffers };
       }
