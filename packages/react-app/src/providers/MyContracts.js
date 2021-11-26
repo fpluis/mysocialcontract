@@ -74,6 +74,7 @@ export const MyContractProvider = ({ children = null }) => {
   const remoteStorage = useRemoteStorage();
   const [event, setEvent] = useState({ seen: true });
   const [eventEmitters, setEventEmitters] = useState([]);
+  const [contractSubscription, setContractSubscription] = useState();
   const [eventMap, setEventMap] = useState({});
   const [contracts, setContracts] = useState([]);
 
@@ -102,14 +103,14 @@ export const MyContractProvider = ({ children = null }) => {
     const emitter = contractEventListener.allEvents({});
     emitter.on("data", async function (event) {
       console.log(`Incoming event for contract ${contractAddress}:`, event);
-      const { event: name, from, returnValues, address, signature } = event;
-      if (eventMap[signature] != null) {
-        console.log(`Event with sig ${signature} has been handled`);
+      const { event: name, from, returnValues, address, transactionHash } = event;
+      if (eventMap[transactionHash] != null) {
+        console.log(`Event with sig ${transactionHash} has been handled`);
         return;
       }
 
       setEventMap(eventMap => {
-        eventMap[signature] = true;
+        eventMap[transactionHash] = true;
         return eventMap;
       });
       console.log(`Promotion event for address ${address}; contract ${JSON.stringify(contract)}:`, event);
@@ -134,11 +135,14 @@ export const MyContractProvider = ({ children = null }) => {
       if (name === "Withdraw") {
         const { amount, withdrawer } = returnValues;
         contract.balance -= Number(amount);
-        console.log(`Handling withdraw event; Contract owner: ${contract.owner.ethAddress}; withdrawer: ${withdrawer}`);
+        console.log(
+          `Handling withdraw event; Contract owner: ${contract.owner.ethAddress}; withdrawer: ${withdrawer}; amount ${amount}; new balance ${contract.balance}`,
+        );
         if (contract.owner.ethAddress.toLowerCase() === withdrawer.toLowerCase()) {
           console.log(`Owner is paid`);
           contract.isOwnerPaid = true;
         } else {
+          console.log(`Provider is paid`);
           contract.isProviderPaid = true;
         }
 
@@ -151,7 +155,7 @@ export const MyContractProvider = ({ children = null }) => {
     return emitter;
   };
 
-  useMemo(async () => {
+  useEffect(async () => {
     if (user.authenticated() && myUserId && blockchain.isReady && !hasLoaded) {
       console.log(`LOAD CONTRACTS`);
       setHasLoaded(true);
@@ -162,16 +166,25 @@ export const MyContractProvider = ({ children = null }) => {
       });
       // createEventEmitters(contracts);
       const emitters = contracts.map(createEventEmitter);
+      // const emitters = contracts.length === 0 ? [] : [createEventEmitter(contracts[0])];
       // const emitters = createEventEmitter(contracts[0]);
       setEventEmitters(emitters);
+      if (contractSubscription) {
+        contractSubscription.unsubscribe();
+      }
+
       const subscription = await remoteStorage.subscribeToContracts(myUserId);
-      subscription.on("create", async contract => {
-        const hydrated = await remoteStorage.hydrateContract(contract);
-        setContracts(currentContracts => [hydrated, ...currentContracts]);
-        setEvent({ seen: false, name: "PromotionCreated", contractAddress: hydrated.contractAddress });
-        createEventEmitter(hydrated);
-        setEventEmitters(emitters => [...emitters, createEventEmitter(hydrated)]);
+      subscription.on("create", async contractObject => {
+        console.log(`Create contract event; object`, contractObject);
+        const contract = await remoteStorage.hydrateContract(contractObject);
+        setContracts(currentContracts => [contract, ...currentContracts]);
+        setEvent({ seen: false, name: "PromotionCreated", contractAddress: contract.contractAddress });
+        if (emitters.length === 0) {
+          // setEventEmitters([createEventEmitter(contract)]);
+          setEventEmitters(emitters => [...emitters, createEventEmitter(contract)]);
+        }
       });
+      setContractSubscription(subscription);
     }
   }, [user, blockchain.isReady]);
 
