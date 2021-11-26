@@ -66,7 +66,6 @@ export const Blockchain = {
       params,
       msgValue: Moralis.Units.ETH(`${initialDeposit}`),
     });
-    console.log(`Create promotion result: ${JSON.stringify(result)}`);
     const {
       events: {
         PromotionCreated: {
@@ -80,9 +79,8 @@ export const Blockchain = {
     return new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
   },
   getContractProps: async contractAddress => {
-    console.log(`Get conditions of contract at ${contractAddress}`);
+    // console.log(`Get conditions of contract at ${contractAddress}`);
     const contract = new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
-    console.log(contract);
     const onChainProps = [
       { type: "weinumber", name: "initialDeposit" },
       { type: "weinumber", name: "balanceAtEnd" },
@@ -103,7 +101,6 @@ export const Blockchain = {
     ];
     const values = await Promise.all(
       onChainProps.map(({ name }) => {
-        console.log(`Get ${name}`);
         return contract.methods[name]().call();
       }),
     );
@@ -125,20 +122,18 @@ export const Blockchain = {
   checkConditions: async contract => {
     const { contractAddress } = contract;
     if (contract.ytChannelId !== "-") {
-      const linkTransferResult = await Moralis.transfer({
+      await Moralis.transfer({
         type: "erc20",
         amount: Moralis.Units.Token("0.1", "18"),
         receiver: contractAddress,
         contractAddress: "0xa36085F69e2889c224210F603D836748e7dC0088",
       });
-      console.log(`0.1 LINK Transfer result: ${JSON.stringify(linkTransferResult)}`);
     }
 
     const {
       methods: { checkConditions },
     } = new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
     const ethAddress = Blockchain.Authentication.user.get("ethAddress");
-    console.log(`My address ${ethAddress} user:`, Blockchain.Authentication.user);
     return checkConditions().send({ from: ethAddress });
   },
   withdraw: async contractAddress => {
@@ -147,7 +142,6 @@ export const Blockchain = {
       functionName: "withdraw",
       abi: PromotionABI,
     });
-    console.log(`Withdraw result: ${JSON.stringify(withdrawResult)}`);
     return withdrawResult;
   },
 };
@@ -158,10 +152,13 @@ export const BlockchainProvider = ({ children = null }) => {
   const Authentication = useAuthentication();
   Blockchain.Authentication = Authentication;
   useMemo(async () => {
-    const web3 = await Moralis.enableWeb3();
-    Blockchain.web3 = web3;
-    Blockchain.isReady = true;
-  });
+    if (Authentication.user.authenticated()) {
+      console.log(`Enabling web3`);
+      const web3 = await Moralis.enableWeb3();
+      Blockchain.web3 = web3;
+      Blockchain.isReady = true;
+    }
+  }, [Authentication.user]);
   return <BlockchainProviderContext.Provider value={Blockchain}>{children}</BlockchainProviderContext.Provider>;
 };
 

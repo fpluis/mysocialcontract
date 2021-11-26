@@ -14,7 +14,6 @@ const hydrateChat = async (chat, userId) => {
   const object = chat.toJSON();
   const { participants } = object;
   const [otherId] = participants.filter(participant => participant !== userId);
-  console.log(`Other participant's id: ${otherId}`);
   const profileQuery = new Moralis.Query(ProfileObject);
   profileQuery.equalTo("userId", otherId);
   const otherAsObject = await profileQuery.first();
@@ -30,7 +29,6 @@ const loadChats = async userId => {
   query.ascending("createdAt");
   query.contains("participants", userId);
   const chats = await query.find();
-  console.log(`Chats: ${JSON.stringify(chats)}`);
   return Promise.all(chats.map(chat => hydrateChat(chat, userId)));
 };
 
@@ -55,7 +53,6 @@ export const MessagingProvider = ({ children = null }) => {
   // const [incomingMessages, setIncomingMessages] = useState();
 
   const addChat = chat => {
-    console.log(`Add chat ${JSON.stringify(chat)} to chats ${JSON.stringify(chats)}`);
     setChats(previousChats => [...previousChats, chat]);
   };
 
@@ -63,11 +60,9 @@ export const MessagingProvider = ({ children = null }) => {
     setMessageMap(messageMap => {
       const current = messageMap[chatId] == null ? [] : messageMap[chatId];
       const messages = messageObjects.map(message => message.toJSON());
-      console.log(`Add messages ${JSON.stringify(messages)} to ${JSON.stringify(current)}`);
       const unread = messages.reduce((total, { unread, destinatary }) => {
         return unread && destinatary === myUserId ? total + 1 : total;
       }, 0);
-      console.log(`A total of ${unread} unread messages`);
 
       setChats(currentChats => {
         const chat = currentChats.find(({ objectId }) => objectId === chatId);
@@ -76,7 +71,6 @@ export const MessagingProvider = ({ children = null }) => {
             ? [{ createdAt: chat.createdAt }]
             : messages.sort(({ createdAt: createdAt1 }, { createdAt: createdAt2 }) => createdAt2 - createdAt1);
         chat.lastMessageDate = lastMessage.createdAt;
-        console.log(`Last message: ${JSON.stringify(lastMessage)}`);
         if (unread > 0) {
           chat.unread += unread;
         }
@@ -102,7 +96,6 @@ export const MessagingProvider = ({ children = null }) => {
     return query.subscribe().then(subscription => {
       setSubscriptionMap(subscriptionMap => {
         subscription.on("create", messageObject => {
-          console.log(`INCOMING MESSAGE: ${JSON.stringify(messageObject.toJSON())}`);
           addMessages(chatId, [messageObject]);
         });
         subscriptionMap[chatId] = subscription;
@@ -128,7 +121,6 @@ export const MessagingProvider = ({ children = null }) => {
     }
 
     const loadedChats = await loadChats(myUserId);
-    console.log(`Loaded chats: ${JSON.stringify(loadedChats)}`);
     // Order here matters because chats have only truly loaded
     // after they are also set.
     setChats(loadedChats);
@@ -138,7 +130,6 @@ export const MessagingProvider = ({ children = null }) => {
       const { objectId: chatId } = chat;
       subscribeToMessages(chatId);
       loadMessages(chatId).then(messages => {
-        console.log(`Loaded messages for ${chatId}: ${JSON.stringify(messages)}`);
         addMessages(chatId, messages);
       });
     });
@@ -147,7 +138,6 @@ export const MessagingProvider = ({ children = null }) => {
     subscription.on("create", async chat => {
       const hydrated = await hydrateChat(chat, user.id);
       const { objectId: chatId, participants } = hydrated;
-      console.log(`Chat created:`, hydrated, chatId);
       hydrated.unread = 1;
       addChat(hydrated);
       subscribeToMessages(chatId);
@@ -156,7 +146,6 @@ export const MessagingProvider = ({ children = null }) => {
       // because otherwise the chat's messages will be doubled
       if (userIsChatRecipient) {
         loadMessages(chatId).then(messages => {
-          console.log(`Loaded messages for ${chatId}: ${JSON.stringify(messages)}`);
           addMessages(chatId, messages);
         });
       }
@@ -169,7 +158,6 @@ export const MessagingProvider = ({ children = null }) => {
       const query = new Moralis.Query(ProfileObject);
       query.equalTo("userId", otherId);
       const other = await query.first();
-      console.log(`Other participant found for user id ${otherId}: ${JSON.stringify(other)}`);
       return {
         participants: [otherId, userId],
         other: {
@@ -193,7 +181,6 @@ export const MessagingProvider = ({ children = null }) => {
       return chat.save().then(chat => chat.toJSON());
     },
     setChatAsRead: ({ objectId: chatId }) => {
-      console.log(`Setting chat ${chatId} as read`);
       setChats(currentChats => {
         const chat = currentChats.find(({ objectId }) => objectId === chatId);
         chat.unread = 0;

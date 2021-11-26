@@ -24,15 +24,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       profile = new ProfileObject({ userId });
     }
 
-    console.log(`User from remote storage: ${JSON.stringify(profile)}`);
     const props = {
       userId: profile.get("userId"),
       username: profile.get("username") || "",
       ethAddress: profile.get("ethAddress"),
     };
     const picture = profile.get("profilePicture");
-    console.log(`Get profile of user ${userId}`);
-    console.log(`Profile picture: ${JSON.stringify(picture)}`);
     if (picture) {
       props.profilePicture = picture.url();
     }
@@ -60,7 +57,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     twitterUsername,
     twitterMinFollowers,
   }) => {
-    console.log(`Creating post; object id: ${objectId}`);
     const post = new PostObject();
     if (objectId) {
       post.set("objectId", objectId);
@@ -91,7 +87,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       })
       .then(
         async post => {
-          console.log(`Post by ${authorId} saved successfully, result`, post);
           const author = await getProfile(authorId);
           post.set("author", author);
           return post;
@@ -111,7 +106,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       })
       .then(
         post => {
-          console.log(`Post saved successfully, result`, post);
           return post;
         },
         error => {
@@ -127,7 +121,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   const getPosts = async ({ status = null, page = 0, authorId = null }) => {
-    console.log(`Get posts for page ${page} with params status=${status}`);
     const query = new Moralis.Query(PostObject);
     query.limit(POST_QUERY_LIMIT);
 
@@ -145,7 +138,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
     query.descending("createdAt");
     const posts = await query.find();
-    console.log(`Posts: ${JSON.stringify(posts)}`);
     const postsWithAuthor = await Promise.all(
       posts.map(async post => {
         const author = await getProfile(post.get("authorId"));
@@ -153,16 +145,13 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         return post.toJSON();
       }),
     );
-    console.log(`Posts with author ${JSON.stringify(postsWithAuthor)}`);
     postsWithAuthor.forEach(post => {
-      console.log(`Serializing post ${post}`);
       LocalStorage.setItem(post.objectId, post);
     });
     return postsWithAuthor;
   };
 
   const getPost = id => {
-    console.log(`Get posts with id ${id}`);
     const cached = LocalStorage.getItem(id);
     if (cached) {
       return cached;
@@ -206,7 +195,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       })
       .then(
         offer => {
-          console.log(`Object saved successfully, result`, offer);
           return offer;
         },
         error => {
@@ -224,7 +212,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       })
       .then(
         offer => {
-          console.log(`Object saved successfully, result`, offer);
           return offer;
         },
         error => {
@@ -234,7 +221,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   const getOffers = async ({ postIds, authorId }) => {
-    console.log(`Get offers with params postIds=${postIds}, authorId=${authorId}`);
     const query = new Moralis.Query(OfferObject);
     query.descending("createdAt");
     if (postIds) {
@@ -246,7 +232,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     }
 
     const offers = await query.find();
-    console.log(`Offers: ${JSON.stringify(offers)}`);
     const offersWithAuthor = await Promise.all(
       offers.map(async offer => {
         const author = await getProfile(offer.get("authorId"));
@@ -254,7 +239,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
         return offer.toJSON();
       }),
     );
-    console.log(`Offers with author ${JSON.stringify(offersWithAuthor)}`);
     offersWithAuthor.forEach(offer => {
       console.log(`Serializing offer ${offer}`);
       LocalStorage.setItem(offer.objectId, offer);
@@ -263,15 +247,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   const putContract = async ({ contractAddress, ownerId, providerId, ytChannelId, twitterUsername }) => {
-    console.log(
-      `Creating contract with ${JSON.stringify({
-        contractAddress,
-        ownerId,
-        providerId,
-        ytChannelId,
-        twitterUsername,
-      })}`,
-    );
     const contract = new ContractObject({ contractAddress, ownerId, providerId });
     const acl = new Moralis.ACL();
     acl.setPublicReadAccess(true);
@@ -281,9 +256,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       const { viewCount, subscriberCount } = await Moralis.Cloud.run("getYoutubeStatistics", {
         channelId: ytChannelId,
       });
-      console.log(
-        `YT Statistics for contract channel ${ytChannelId}: ${JSON.stringify({ viewCount, subscriberCount })}`,
-      );
+
       contract.set("initialYoutubeViews", viewCount);
       contract.set("initialYoutubeSubs", subscriberCount);
     }
@@ -292,13 +265,11 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       const initialTwitterFollowers = await Moralis.Cloud.run("getTwitterFollowers", {
         username: twitterUsername,
       });
-      console.log(`Twitter followers for ${twitterUsername}: ${initialTwitterFollowers}`);
       contract.set("initialTwitterFollowers", initialTwitterFollowers);
     }
 
     return contract.save().then(
       async result => {
-        console.log(`Contract saved successfully, result`, result);
         return result;
       },
       error => {
@@ -320,14 +291,12 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   const hydrateContract = async contract => {
-    console.log(`Hydrating contract ${JSON.stringify(contract)}`);
     const owner = await getProfile(contract.get("ownerId"));
     contract.set("owner", owner);
     const provider = await getProfile(contract.get("providerId"));
     contract.set("provider", provider);
     if (Blockchain.web3) {
       const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
-      console.log(`On-chain props:`, onChainProps);
       Object.entries(onChainProps).forEach(([name, value]) => {
         contract.set(name, value);
       });
@@ -335,14 +304,10 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
     const channelId = contract.get("ytChannelId");
     if (channelId !== "-") {
-      console.log(`Get statistics for ${channelId}`);
       try {
         const { viewCount, subscriberCount } = await Moralis.Cloud.run("getYoutubeStatistics", {
           channelId,
         });
-        console.log(
-          `YT Statistics for contract channel ${channelId}: ${JSON.stringify({ viewCount, subscriberCount })}`,
-        );
         contract.set("liveYtViewCount", viewCount);
         contract.set("liveYtSubCount", subscriberCount);
       } catch (error) {
@@ -355,7 +320,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       const liveTwitterFollowers = await Moralis.Cloud.run("getTwitterFollowers", {
         username: twitterUsername,
       });
-      console.log(`Twitter followers for ${twitterUsername}: ${liveTwitterFollowers}`);
       contract.set("liveTwitterFollowers", liveTwitterFollowers);
     }
 
@@ -373,7 +337,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   // };
 
   const getContracts = async ({ ownerId, providerId }) => {
-    console.log(`Get contracts with params ownerId=${ownerId}, providerId=${providerId}`);
     if (!ownerId && !providerId) {
       return [];
     }
@@ -393,11 +356,8 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
     query.descending("createdAt");
     const contracts = await query.find();
-    console.log(`Contracts with ownerId=${ownerId}, providerId=${providerId}: ${JSON.stringify(contracts)}`);
     const hydratedContracts = await Promise.all(contracts.map(hydrateContract));
-    console.log(`Hydrated contracts ${JSON.stringify(hydratedContracts)}`);
     hydratedContracts.forEach(contract => {
-      console.log(`Serializing contracts ${contract}`);
       LocalStorage.setItem(contract.objectId, contract);
     });
     return hydratedContracts;

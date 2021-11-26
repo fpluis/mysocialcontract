@@ -53,7 +53,6 @@ const toAchievements = (userId, contracts) =>
         achievements[role].twitterFollowers += gainedFollowers;
       }
 
-      console.log(`Initial deposit: ${initialDeposit}; balance at end: ${balanceAtEnd}`);
       const gainedEth = balanceAtEnd - initialDeposit;
       if (gainedEth > 0) {
         achievements[role].ethereum += gainedEth;
@@ -77,12 +76,6 @@ export const MyContractProvider = ({ children = null }) => {
   const [eventEmitters, setEventEmitters] = useState([]);
   const [eventMap, setEventMap] = useState({});
   const [contracts, setContracts] = useState([]);
-
-  console.log(
-    `Use blockchain events with contracts ${JSON.stringify(
-      contracts.map(({ contractAddress }) => contractAddress),
-    )}; is blockchain ready: ${blockchain.isReady}`,
-  );
 
   useMemo(() => {
     if (event.name === "OnSuccess") {
@@ -163,7 +156,6 @@ export const MyContractProvider = ({ children = null }) => {
       console.log(`LOAD CONTRACTS`);
       setHasLoaded(true);
       const contracts = await remoteStorage.getContracts({ ownerId: myUserId, providerId: myUserId });
-      console.log(`Creating event emitters for ${contracts.length} contracts`);
       setContracts(contracts);
       eventEmitters.forEach(listener => {
         listener.removeAllListeners();
@@ -171,11 +163,9 @@ export const MyContractProvider = ({ children = null }) => {
       // createEventEmitters(contracts);
       const emitters = contracts.map(createEventEmitter);
       // const emitters = createEventEmitter(contracts[0]);
-      console.log(`Emitters;`, emitters);
       setEventEmitters(emitters);
       const subscription = await remoteStorage.subscribeToContracts(myUserId);
       subscription.on("create", async contract => {
-        console.log(` : ${JSON.stringify(contract.toJSON())}`);
         const hydrated = await remoteStorage.hydrateContract(contract);
         setContracts(currentContracts => [hydrated, ...currentContracts]);
         setEvent({ seen: false, name: "PromotionCreated", contractAddress: hydrated.contractAddress });
