@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useAuthentication, useBlockchain, useRemoteStorage } from ".";
 
 const ContractProviderContext = React.createContext({
@@ -70,14 +70,10 @@ export const MyContractProvider = ({ children = null }) => {
   const [eventMap, setEventMap] = useState({});
   const [contracts, setContracts] = useState([]);
 
-  const createEventEmitter = contract => {
-    const { contractAddress } = contract;
-    console.log(`Create emitter for ${contractAddress}`);
-    const { events: contractEventListener } = blockchain.getContract(contractAddress);
-    const emitter = contractEventListener.allEvents({});
-    emitter.on("data", async function (event) {
-      console.log(`Incoming event for contract ${contractAddress}:`, event);
-      const { event: name, from, returnValues, address, transactionHash } = event;
+  const handleEvent = useCallback(
+    contract => event => {
+      console.log(`Incoming event for contract ${contract.contractAddress}:`, event);
+      const { event: name, returnValues, address, transactionHash } = event;
       if (eventMap[transactionHash] != null) {
         console.log(`Event with sig ${transactionHash} has been handled`);
         return;
@@ -132,6 +128,18 @@ export const MyContractProvider = ({ children = null }) => {
         setContracts(contracts => [...contracts]);
         setNotification("contracts", true);
       }
+    },
+    [eventMap, setNotification, setUserAttribute],
+  );
+
+  const createEventEmitter = contract => {
+    const { contractAddress } = contract;
+    // console.log(`Create emitter for ${contractAddress}`);
+    const { events: contractEventListener } = blockchain.getContract(contractAddress);
+    const emitter = contractEventListener.allEvents({});
+    emitter.on("data", async function (event) {
+      console.log(`Event received: ${JSON.stringify(event)}`);
+      handleEvent(contract)(event);
     });
     return emitter;
   };
@@ -156,10 +164,7 @@ export const MyContractProvider = ({ children = null }) => {
         console.log(`Create contract event; object`, contractObject);
         const contract = await remoteStorage.hydrateContract(contractObject);
         setContracts(currentContracts => [contract, ...currentContracts]);
-        setNotification("contracts", true);
-        if (emitters.length === 0) {
-          setEventEmitters(emitters => [...emitters, createEventEmitter(contract)]);
-        }
+        setEventEmitters(emitters => [...emitters, createEventEmitter(contract)]);
       });
       setContractSubscription(subscription);
     }

@@ -26,12 +26,10 @@ export default function AppBar() {
   }, [setRoute, window.location.hash]);
 
   useEffect(() => {
-    console.log(`Notifications: ${JSON.stringify(notifications)};`);
-    if (
-      (notifications.contracts === true || notifications.requests === true || notifications.offers === true) &&
-      !route.startsWith("/posts") &&
-      !route.startsWith("/me")
-    ) {
+    console.log(`Notifications: ${JSON.stringify(notifications)}; route ${route}`);
+    if (route.startsWith("/posts") || route.startsWith("/me")) {
+      setShowContractNotification(false);
+    } else if (notifications.contracts === true || notifications.requests === true || notifications.offers === true) {
       setShowContractNotification(true);
     }
   }, [notifications, route]);

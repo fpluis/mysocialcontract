@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useCallback, useEffect, useState } from "react";
 import { MORALIS_SERVER_ID, MORALIS_APP_ID } from "../constants";
 import Moralis from "moralis";
 import { NotificationsObject, ProfileObject } from "../classes";
@@ -13,6 +13,7 @@ export const AuthenticationProvider = ({ children = null }) => {
   const [profile, setProfile] = useState({ get: () => null, toJSON: () => ({}), updatedAt: null });
   const [updatedAt, setUpdatedAt] = useState(profile.get("updatedAt") || "");
   const [notifications, setNotifications] = useState({
+    get: () => {},
     set: () => {},
     save: () => {},
     toJSON: () => ({ userId: "", requests: false, offers: false, contracts: false }),
@@ -31,11 +32,25 @@ export const AuthenticationProvider = ({ children = null }) => {
     return query.first();
   };
 
-  const setNotification = (notificationName, value = false) => {
-    notifications.set(notificationName, value);
-    setNotifications(notifications);
-    return notifications.save();
-  };
+  const setNotification = useCallback(
+    async (notificationName, value = false) => {
+      console.log(
+        `Updating notifications locally with '${notificationName}' = '${value}'; current ${JSON.stringify(
+          notifications.toJSON(),
+        )}`,
+      );
+      if (notifications.get(notificationName) !== value) {
+        console.log(`Value updated; persisting to db`);
+        notifications.set(notificationName, value);
+        await notifications.save();
+      }
+
+      // No need to set the notifications locally because
+      // they will be updated after the server subscription hook
+      // setNotifications(notifications);
+    },
+    [notifications],
+  );
 
   const subscribeToNotifications = userId => {
     const query = new Moralis.Query(NotificationsObject);
@@ -65,6 +80,7 @@ export const AuthenticationProvider = ({ children = null }) => {
 
       const subscription = await subscribeToNotifications(user.id);
       subscription.on("update", notifications => {
+        console.log(`Update to notifications from server: ${notifications}`);
         setNotifications(notifications);
       });
       setNotificationsSubscription(subscription);

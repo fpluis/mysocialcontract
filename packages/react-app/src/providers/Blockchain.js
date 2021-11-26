@@ -79,7 +79,7 @@ export const Blockchain = {
     return new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
   },
   getContractProps: async contractAddress => {
-    // console.log(`Get conditions of contract at ${contractAddress}`);
+    console.log(`Get conditions of contract at ${contractAddress}`);
     const contract = new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
     const onChainProps = [
       { type: "weinumber", name: "initialDeposit" },
@@ -104,12 +104,14 @@ export const Blockchain = {
         return contract.methods[name]().call();
       }),
     );
+    console.log(`Values: ${JSON.stringify(values)}`);
     const balance = await Moralis.Web3API.account
       .getNativeBalance({
         chain: "kovan",
         address: contractAddress,
       })
       .then(({ balance }) => Number(balance));
+    console.log(`Balance: ${JSON.stringify(balance)}`);
     return values.reduce(
       (props, rawValue, index) => {
         const { type, name } = onChainProps[index];

@@ -293,6 +293,24 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     return query;
   };
 
+  const delay = milliseconds =>
+    new Promise(resolve => {
+      setTimeout(resolve, milliseconds);
+    });
+
+  // The retries are necessary due to the spurious error
+  // 'Returned values aren’t valid, did it run Out of Gas?'
+  const getPropsWithRetry = (contractAddress, maxTries = 4, tries = 0) => {
+    return Blockchain.getContractProps(contractAddress).catch(error => {
+      if (tries < maxTries) {
+        return delay(1000).then(() => getPropsWithRetry(contractAddress, maxTries, tries + 1));
+      }
+
+      console.log(error);
+      return {};
+    });
+  };
+
   const hydrateContract = async contract => {
     const owner = await getProfile(contract.get("ownerId"));
     contract.set("owner", owner);
@@ -300,7 +318,8 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     contract.set("provider", provider);
     if (Blockchain.web3) {
       console.log(`Get contract props of ${JSON.stringify(contract.get("contractAddress"))}`);
-      const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
+      // const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
+      const onChainProps = await getPropsWithRetry(contract.get("contractAddress"));
       Object.entries(onChainProps).forEach(([name, value]) => {
         contract.set(name, value);
       });
