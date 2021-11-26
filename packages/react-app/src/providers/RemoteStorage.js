@@ -162,6 +162,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   const putOffer = async ({
+    authorId,
     postId,
     comment,
     initialDeposit,
@@ -176,7 +177,8 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     const offer = new OfferObject();
     const acl = new Moralis.ACL();
     acl.setPublicReadAccess(true);
-    acl.setWriteAccess(Authentication.profile.userId, true);
+    // Only the user who receives the offer can modify it
+    acl.setWriteAccess(authorId, true);
     offer.setACL(acl);
     return offer
       .save({
@@ -204,6 +206,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   const setOfferStatus = (id, status) => {
+    console.log(`Setting offer status of ${id} as ${status}`);
     const offer = new OfferObject();
     return offer
       .save({
@@ -296,6 +299,7 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     const provider = await getProfile(contract.get("providerId"));
     contract.set("provider", provider);
     if (Blockchain.web3) {
+      console.log(`Get contract props of ${JSON.stringify(contract.get("contractAddress"))}`);
       const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
       Object.entries(onChainProps).forEach(([name, value]) => {
         contract.set(name, value);

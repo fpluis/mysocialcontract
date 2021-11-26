@@ -14,7 +14,7 @@ export default function PostDetail({ post }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const { currentTheme } = useThemeSwitcher();
 
-  const { objectId, author, title, description, createdAt } = post;
+  const { objectId, author, authorId, title, description, createdAt } = post;
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -22,7 +22,7 @@ export default function PostDetail({ post }) {
 
   const putOffer = async props => {
     console.log(`Put offer with props ${JSON.stringify(props)}`);
-    const result = await remoteStorage.putOffer({ ...props, postId: objectId });
+    const result = await remoteStorage.putOffer({ ...props, authorId, postId: objectId });
     console.log(`Result: ${JSON.stringify(result)}`);
     setIsModalVisible(false);
     message.success("Offer sent successfully!");
