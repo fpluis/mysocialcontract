@@ -105,6 +105,7 @@ export default function PostEditorModal({
                   ytChannelId,
                 });
                 setIsSearching(false);
+                setHasAddedYtChannel(true);
               });
             }}
           ></Input.Search>

@@ -69,18 +69,20 @@ export const MyContractProvider = ({ children = null }) => {
   const [contractSubscription, setContractSubscription] = useState();
   const [eventMap, setEventMap] = useState({});
   const [contracts, setContracts] = useState([]);
+  const [event, setEvent] = useState();
 
   const handleEvent = useCallback(
-    contract => event => {
+    (contract, event) => {
       console.log(`Incoming event for contract ${contract.contractAddress}:`, event);
-      const { event: name, returnValues, address, transactionHash } = event;
-      if (eventMap[transactionHash] != null) {
-        console.log(`Event with sig ${transactionHash} has been handled`);
+      const { event: name, returnValues, address, transactionHash, logIndex } = event;
+      const eventKey = `${transactionHash}-${logIndex}`;
+      if (eventMap[eventKey] != null) {
+        console.log(`Event with key ${eventKey} has been handled`);
         return;
       }
 
       setEventMap(eventMap => {
-        eventMap[transactionHash] = true;
+        eventMap[eventKey] = true;
         return eventMap;
       });
       console.log(`Promotion event for address ${address}; contract ${JSON.stringify(contract)}:`, event);
@@ -89,14 +91,12 @@ export const MyContractProvider = ({ children = null }) => {
         contract.ytSubs = ytSubs;
         contract.ytViews = ytViews;
         contract.twitterFollowers = twitterFollowers;
-        setContracts(contracts => [...contracts]);
       }
 
       if (name === "OnSuccess") {
         const { balance } = returnValues;
         contract.isSuccessful = true;
         contract.balanceAtEnd = balance / 1000000000000000000;
-        setContracts(contracts => [...contracts]);
         const achievements = toAchievements(myUserId, contracts);
         console.log(
           `Achievements generated from contracts ${JSON.stringify(contracts)}: ${JSON.stringify(achievements)}`,
@@ -128,8 +128,10 @@ export const MyContractProvider = ({ children = null }) => {
         setContracts(contracts => [...contracts]);
         setNotification("contracts", true);
       }
+
+      setEvent(event);
     },
-    [eventMap, setNotification, setUserAttribute],
+    [contracts, eventMap, setNotification, setUserAttribute],
   );
 
   const createEventEmitter = contract => {
@@ -139,7 +141,7 @@ export const MyContractProvider = ({ children = null }) => {
     const emitter = contractEventListener.allEvents({});
     emitter.on("data", async function (event) {
       console.log(`Event received: ${JSON.stringify(event)}`);
-      handleEvent(contract)(event);
+      handleEvent(contract, event);
     });
     return emitter;
   };
@@ -147,7 +149,6 @@ export const MyContractProvider = ({ children = null }) => {
   useEffect(async () => {
     if (user.authenticated() && myUserId && blockchain.isReady && !hasLoaded) {
       console.log(`LOAD CONTRACTS`);
-      setHasLoaded(true);
       const contracts = await remoteStorage.getContracts({ ownerId: myUserId, providerId: myUserId });
       setContracts(contracts);
       eventEmitters.forEach(listener => {
@@ -167,11 +168,14 @@ export const MyContractProvider = ({ children = null }) => {
         setEventEmitters(emitters => [...emitters, createEventEmitter(contract)]);
       });
       setContractSubscription(subscription);
+      setHasLoaded(true);
     }
   }, [user, blockchain.isReady]);
 
   return (
-    <ContractProviderContext.Provider value={{ contracts, setContracts }}>{children}</ContractProviderContext.Provider>
+    <ContractProviderContext.Provider value={{ contracts, setContracts, hasLoaded, event }}>
+      {children}
+    </ContractProviderContext.Provider>
   );
 };
 

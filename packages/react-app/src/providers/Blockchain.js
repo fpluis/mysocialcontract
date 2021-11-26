@@ -2,11 +2,11 @@ import React, { useContext, useMemo } from "react";
 import Moralis from "moralis";
 import hardhat_contracts from "../contracts/hardhat_contracts.json";
 import { BigNumber } from "@ethersproject/bignumber";
-import { useAuthentication } from ".";
+import { useAuthentication } from "./index";
 
 const { abi: PromotionFactoryABI, address: PromotionFactoryAddress } =
   hardhat_contracts[42].kovan.contracts.PromotionFactory;
-const { abi: PromotionABI, address: PromotionAddress } = hardhat_contracts[42].kovan.contracts.Promotion;
+const { abi: PromotionABI } = hardhat_contracts[42].kovan.contracts.Promotion;
 
 const normalizeOnChainValue = (type, value) => {
   switch (type) {
@@ -30,7 +30,6 @@ export const Blockchain = {
     provider,
     initialDeposit,
     thresholdETH = 0,
-    // startDate,
     endDate,
     share,
     ytChannelId = "-",
@@ -54,11 +53,6 @@ export const Blockchain = {
       twitterUsername,
       twitterMinFollowers,
     };
-    console.log(
-      `Create Promotion with params ${JSON.stringify(params)}; msgvalue: ${Moralis.Units.ETH(
-        `${initialDeposit}`,
-      )}; Initial deposit arg ${BigNumber.from(`${initialDeposit * 1000000000000000000}`).toString()}`,
-    );
     const result = await Moralis.executeFunction({
       contractAddress: PromotionFactoryAddress,
       functionName: "createPromotion",
@@ -79,7 +73,6 @@ export const Blockchain = {
     return new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
   },
   getContractProps: async contractAddress => {
-    console.log(`Get conditions of contract at ${contractAddress}`);
     const contract = new Blockchain.web3.eth.Contract(PromotionABI, contractAddress);
     const onChainProps = [
       { type: "weinumber", name: "initialDeposit" },
@@ -104,14 +97,12 @@ export const Blockchain = {
         return contract.methods[name]().call();
       }),
     );
-    console.log(`Values: ${JSON.stringify(values)}`);
     const balance = await Moralis.Web3API.account
       .getNativeBalance({
         chain: "kovan",
         address: contractAddress,
       })
       .then(({ balance }) => Number(balance));
-    console.log(`Balance: ${JSON.stringify(balance)}`);
     return values.reduce(
       (props, rawValue, index) => {
         const { type, name } = onChainProps[index];
@@ -155,7 +146,6 @@ export const BlockchainProvider = ({ children = null }) => {
   Blockchain.Authentication = Authentication;
   useMemo(async () => {
     if (Authentication.user.authenticated()) {
-      console.log(`Enabling web3`);
       const web3 = await Moralis.enableWeb3();
       Blockchain.web3 = web3;
       Blockchain.isReady = true;

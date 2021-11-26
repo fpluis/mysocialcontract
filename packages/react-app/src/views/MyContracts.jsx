@@ -1,12 +1,12 @@
-import { List, Button, Col, Row, Descriptions, Progress, Divider, Statistic } from "antd";
-import React from "react";
+import { List, Button, Col, Row, Descriptions, Progress, Divider, Statistic, Spin, Modal, Result } from "antd";
+import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { Conditions, ProfileBadge } from "../components";
 import { useAuthentication, useBlockchain, useMyContracts } from "../providers";
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
-const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions }) => {
+const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsModal }) => {
   const {
     owner,
     provider,
@@ -28,8 +28,6 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
     liveTwitterFollowers,
   } = contract;
 
-  // console.log(`Render contract ${JSON.stringify(contract)}`);
-
   const deadlineInSeconds = contract.endDate;
   const nowInSeconds = new Date().getTime() / 1000;
   const gracePeriodEnd = deadlineInSeconds + ONE_DAY_IN_SECONDS;
@@ -44,11 +42,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
     ytMinSubscriberCount === 0 ? 100 : Math.min((liveYtSubCount / ytMinSubscriberCount) * 100, 100);
   const twitterLiveFollowersPercent =
     twitterMinFollowers === 0 ? 100 : Math.min((liveTwitterFollowers / twitterMinFollowers) * 100, 100);
-  // console.log(
-  //   `Live yt sub count ${liveYtSubCount}, min sub count ${ytMinSubscriberCount}; div ${
-  //     liveYtSubCount / ytMinSubscriberCount
-  //   }; percent: ${ytLiveSubPercent}`,
-  // );
+
   const status = isSuccessful
     ? "successful"
     : deadlineInSeconds > nowInSeconds
@@ -71,10 +65,6 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
     (myEthAddress.toLowerCase() === owner.ethAddress.toLowerCase() &&
       !isOwnerPaid &&
       ["failed", "successful"].includes(status));
-
-  // console.log(
-  //   `My eth address: ${myEthAddress}; provider eth address ${provider.ethAddress}; owner ${owner.ethAddress}; isOwnerPaid ${isOwnerPaid}; isProviderPaid ${isProviderPaid}; status ${status}`,
-  // );
 
   return (
     <List.Item key={key} style={{ marginTop: "32px" }}>
@@ -158,9 +148,10 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
               </Col>
               <Col span={18}>
                 <Button
+                  disabled={isSuccessful}
                   style={{ float: "right" }}
                   onClick={async () => {
-                    const result = await checkConditions(contract);
+                    openConditionsModal(contract);
                   }}
                 >
                   Update state
@@ -197,19 +188,66 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, checkConditions
   );
 };
 
+const ResultsModal = ({ visible, title, onOk, onCancel, needsLink, isSuccessful }) => {
+  const [isCheckingConditions, setIsCheckingConditions] = useState(false);
+  return (
+    <Modal visible={visible} title={title} footer={null} onCancel={onCancel}>
+      {isSuccessful ? (
+        <Result
+          status="success"
+          title="Your contract was successful! Both parties can now withdraw their share"
+          extra={[
+            <Button type="primary" key="close" onClick={onCancel}>
+              Go Back to your contracts
+            </Button>,
+          ]}
+        />
+      ) : isCheckingConditions ? (
+        <div style={{ width: "100%", textAlign: "center" }}>
+          <h1>Checking conditions...</h1>
+          <Spin style={{ width: "100%" }} size="large" />
+        </div>
+      ) : (
+        <Result
+          title={
+            needsLink
+              ? "Make sure you have at least 0.1 LINK and some ETH to pay for the transaction"
+              : "Make sure you have some ETH to pay for the transaction"
+          }
+          extra={
+            <Button
+              type="primary"
+              key="console"
+              onClick={async () => {
+                setIsCheckingConditions(true);
+                return onOk();
+              }}
+            >
+              Check conditions
+            </Button>
+          }
+        />
+      )}
+    </Modal>
+  );
+};
+
 export default function ContractList() {
   const {
     profile: { userId: myUserId, ethAddress: myEthAddress },
   } = useAuthentication();
   const blockchain = useBlockchain();
-  const { contracts } = useMyContracts();
+  const { contracts, event, hasLoaded } = useMyContracts();
+  const [isResultsModalVisible, setIsResultsModalVisible] = useState(false);
+  const [currentContract, setCurrentContract] = useState();
 
-  const withdraw = async contract => {
-    const result = await blockchain.withdraw(contract.contractAddress);
-  };
+  const withdraw = contract => blockchain.withdraw(contract.contractAddress);
 
-  const checkConditions = contract => {
-    return blockchain.checkConditions(contract);
+  const checkConditions = contract => blockchain.checkConditions(contract);
+
+  const openConditionsModal = contract => {
+    setCurrentContract(contract);
+    setIsResultsModalVisible(true);
   };
 
   const listProps = {
@@ -219,13 +257,15 @@ export default function ContractList() {
     className: "contract-list",
   };
 
+  const needsLink = contract => contract.ytChannelId !== "-" || contract.twitterUsername !== "-";
+
   const contractsIOwn = contracts.filter(contract => contract.ownerId === myUserId);
   const contractsIProvide = contracts.filter(contract => contract.providerId === myUserId);
-  // console.log(
-  //   `Contracts I (${myUserId}) own: ${JSON.stringify(contractsIOwn)}; provide: ${JSON.stringify(contractsIOwn)}`,
-  // );
+
+  console.log(`Received event ${JSON.stringify(event)}`);
   return (
     <>
+      {!hasLoaded && <Spin size="large" style={{ width: "100%", marginTop: "64px" }} />}
       <h1 style={{ marginLeft: "16px", marginTop: "16px" }}>Contracts I created</h1>
       <List
         {...listProps}
@@ -236,7 +276,7 @@ export default function ContractList() {
             key: index,
             myEthAddress,
             withdraw,
-            checkConditions,
+            openConditionsModal,
           })
         }
       />
@@ -251,10 +291,23 @@ export default function ContractList() {
             key: index,
             myEthAddress,
             withdraw,
-            checkConditions,
+            openConditionsModal,
           })
         }
       />
+      <ResultsModal
+        visible={isResultsModalVisible}
+        title="Check the contract's conditions"
+        isSuccessful={
+          event && currentContract && event.event === "OnSuccess" && event.address === currentContract.contractAddress
+        }
+        needsLink={currentContract != null && needsLink(currentContract)}
+        onCancel={() => {
+          setIsResultsModalVisible(false);
+          setCurrentContract(null);
+        }}
+        onOk={() => checkConditions(currentContract)}
+      ></ResultsModal>
     </>
   );
 }

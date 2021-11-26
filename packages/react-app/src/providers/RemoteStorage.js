@@ -205,7 +205,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
   };
 
   const setOfferStatus = (id, status) => {
-    console.log(`Setting offer status of ${id} as ${status}`);
     const offer = new OfferObject();
     offer.unset("author");
     return offer
@@ -243,7 +242,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
       }),
     );
     offersWithAuthor.forEach(offer => {
-      console.log(`Serializing offer ${offer}`);
       LocalStorage.setItem(offer.objectId, offer);
     });
     return offersWithAuthor;
@@ -258,6 +256,9 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     if (ytChannelId) {
       const { viewCount, subscriberCount } = await Moralis.Cloud.run("getYoutubeStatistics", {
         channelId: ytChannelId,
+      }).catch(error => {
+        console.log(error);
+        return { viewCount: 0, subscriberCount: 0 };
       });
 
       contract.set("initialYoutubeViews", viewCount);
@@ -267,6 +268,9 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     if (twitterUsername) {
       const initialTwitterFollowers = await Moralis.Cloud.run("getTwitterFollowers", {
         username: twitterUsername,
+      }).catch(error => {
+        console.log(error);
+        return 0;
       });
       contract.set("initialTwitterFollowers", initialTwitterFollowers);
     }
@@ -317,8 +321,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
     const provider = await getProfile(contract.get("providerId"));
     contract.set("provider", provider);
     if (Blockchain.web3) {
-      console.log(`Get contract props of ${JSON.stringify(contract.get("contractAddress"))}`);
-      // const onChainProps = await Blockchain.getContractProps(contract.get("contractAddress"));
       const onChainProps = await getPropsWithRetry(contract.get("contractAddress"));
       Object.entries(onChainProps).forEach(([name, value]) => {
         contract.set(name, value);
@@ -348,16 +350,6 @@ export const RemoteStorage = (LocalStorage = localStorage, Authentication = { us
 
     return contract.toJSON();
   };
-
-  // const getContract = async ({ contractId, contractAddress }) => {
-  //   const query = new Moralis.Query(ContractObject);
-  //   if (contractAddress) {
-  //     query.equalTo("contractAddress", contractAddress);
-  //     return query.first().then(hydrateContract);
-  //   }
-
-  //   return query.get(contractId).then(hydrateContract);
-  // };
 
   const getContracts = async ({ ownerId, providerId }) => {
     if (!ownerId && !providerId) {
