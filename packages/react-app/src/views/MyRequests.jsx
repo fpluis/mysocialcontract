@@ -7,6 +7,7 @@ import { PostEditorModal, Description, Conditions, ProfileBadge } from "../compo
 import { CloseOutlined, EditOutlined, FormOutlined, MessageOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import moment from "moment";
+import "./MyRequests.css";
 
 const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
   const { ytChannelId, twitterUsername } = post;
@@ -67,31 +68,31 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
 
   const offerTable = [];
 
-  const initialDepositDiff = initialDeposit - offerInitialDeposit;
+  const initialDepositDiff = offerInitialDeposit - initialDeposit;
   if (initialDepositDiff !== 0) {
     offerTable.push({
       key: offerTable.length + 1,
       property: "Initial Deposit",
-      impact: initialDepositDiff > 0 ? "+" : "-",
+      impact: initialDepositDiff > 0 ? "-" : "+",
       requested: initialDeposit,
       offered: offerInitialDeposit,
       difference: initialDepositDiff.toFixed(4),
     });
   }
 
-  const shareDiff = share - offerShare;
+  const shareDiff = offerShare - share;
   if (shareDiff !== 0) {
     offerTable.push({
       key: offerTable.length + 1,
       property: "Provider Share",
-      impact: shareDiff > 0 ? "+" : "-",
+      impact: shareDiff > 0 ? "-" : "+",
       requested: `${share}%`,
       offered: `${offerShare}%`,
       difference: `${shareDiff}%`,
     });
   }
 
-  const thresholdETHDiff = thresholdETH - offerThresholdETH;
+  const thresholdETHDiff = offerThresholdETH - thresholdETH;
   if (thresholdETHDiff !== 0) {
     offerTable.push({
       key: offerTable.length + 1,
@@ -103,15 +104,17 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
     });
   }
 
-  const endDateDiff = endDate - offerEndDate;
+  const endDateDiff = offerEndDate - endDate;
+  const requestedDate = new Date(endDate * 1000);
+  const offeredDate = new Date(offerEndDate * 1000);
   if (endDateDiff !== 0) {
     offerTable.push({
       key: offerTable.length + 1,
       property: "Deadline",
       impact: endDateDiff > 0 ? "+" : "-",
-      requested: endDate,
-      offered: offerEndDate,
-      difference: endDateDiff,
+      requested: requestedDate.toLocaleDateString(),
+      offered: offeredDate.toLocaleDateString(),
+      difference: moment(requestedDate).to(offeredDate),
     });
   }
 
@@ -414,7 +417,7 @@ export default function MyRequests() {
   return (
     <>
       <h1 style={{ fontSize: "2.4rem", width: "100%" }}>My Requests</h1>
-      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
+      <Divider type="horizontal" style={{ marginBottom: "16px" }} />
       <List
         itemLayout="vertical"
         size="default"

@@ -2,10 +2,9 @@ import { ClockCircleOutlined, TwitterOutlined, YoutubeOutlined } from "@ant-desi
 import { List, Button, Col, Row, Descriptions, Progress, Divider, Statistic, Spin, Modal, Result, Card } from "antd";
 import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
-import { Conditions, ProfileBadge } from "../components";
+import { ProfileBadge } from "../components";
 import { useAuthentication, useBlockchain, useMyContracts } from "../providers";
 import moment from "moment";
-import "./MyContracts.css";
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
@@ -19,6 +18,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
     isProviderPaid,
     isSuccessful,
     balance,
+    balanceAtEnd,
     thresholdETH,
     // ytViews,
     // ytSubs,
@@ -38,12 +38,8 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
   const deadlineInSeconds = contract.endDate;
   const nowInSeconds = new Date().getTime() / 1000;
   const gracePeriodEnd = deadlineInSeconds + ONE_DAY_IN_SECONDS;
-  const balanceETH = balance / 1000000000000000000;
-  const balancePercent = thresholdETH === 0 || isSuccessful ? 100 : Math.min((balance / thresholdETH) * 100, 100);
-  // const ytViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((ytViews / ytMinViewCount) * 100, 100);
-  // const ytSubsPercent = ytMinSubscriberCount === 0 ? 100 : Math.min((ytSubs / ytMinSubscriberCount) * 100, 100);
-  // const twitterFollowersPercent =
-  //   twitterMinFollowers === 0 ? 100 : Math.min((twitterFollowers / twitterMinFollowers) * 100, 100);
+  const balanceETH = balanceAtEnd === 0 ? balance / 1000000000000000000 : balanceAtEnd;
+  const balancePercent = thresholdETH === 0 || isSuccessful ? 100 : Math.min((balanceETH / thresholdETH) * 100, 100);
   const ytLiveViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((liveYtViewCount / ytMinViewCount) * 100, 100);
   const ytLiveSubPercent =
     ytMinSubscriberCount === 0 ? 100 : Math.min((liveYtSubCount / ytMinSubscriberCount) * 100, 100);
@@ -59,13 +55,13 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
     : "failed";
   const statusMessage =
     status === "successful" ? (
-      <span style={{ color: "#388e3c" }}>Successful</span>
+      <span style={{ color: "#2e7d32" }}>Successful</span>
     ) : status === "active" ? (
-      <span style={{ color: "#388e3c" }}>In progress</span>
+      <span style={{ color: "#4caf50" }}>In progress</span>
     ) : status === "finished" ? (
       <span>Finished</span>
     ) : (
-      <span style={{ color: "#b71c1c" }}>Failed</span>
+      <span style={{ color: "#c62828" }}>Failed</span>
     );
   const canWithdraw =
     (myEthAddress.toLowerCase() === provider.ethAddress.toLowerCase() && !isProviderPaid && status === "successful") ||
@@ -87,7 +83,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
           <Col span={24}>
             <Row>
               <Col span={6}>
-                <h4>{owner.username}</h4>
+                <h4 style={{ fontSize: "1.4rem" }}>{owner.username}</h4>
               </Col>
               <Col span={18}>
                 <Button style={{ float: "right" }}>
@@ -126,7 +122,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
           </Col>
         }
         description={
-          <Col span={24}>
+          <Col span={24} style={{ fontSize: "1rem" }}>
             <Row>
               <h4>Status: {statusMessage}</h4>
             </Row>
@@ -140,11 +136,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
           </Col>
         }
       />
-      {/* <div className="ant-descriptions-header">
-        <div className="ant-descriptions-title">Conditions</div>
-      </div> */}
 
-      {/* <Conditions title={null} layout="horizontal" conditions={contract} /> */}
       <Card title={null} className="contract-progress">
         {ytChannelId && liveYtViewCount && (
           <Card.Grid>
@@ -154,7 +146,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
               </h4>
               <Divider type="horizontal" />
               <p>
-                {Number(liveYtViewCount).toLocaleString()} / {ytMinViewCount}
+                {Number(liveYtViewCount).toLocaleString()} / {Number(ytMinViewCount).toLocaleString()}
               </p>
               <p>
                 <Progress percent={ytLiveViewsPercent}></Progress>
@@ -170,7 +162,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
               </h4>
               <Divider type="horizontal" />
               <p>
-                {Number(liveYtSubCount).toLocaleString()} / {ytMinSubscriberCount}
+                {Number(liveYtSubCount).toLocaleString()} / {Number(ytMinSubscriberCount).toLocaleString()}
               </p>
               <p>
                 <Progress percent={ytLiveSubPercent}></Progress>
@@ -186,7 +178,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
               </h4>
               <Divider type="horizontal" />
               <p>
-                {Number(liveTwitterFollowers).toLocaleString()} / {twitterMinFollowers}
+                {Number(liveTwitterFollowers).toLocaleString()} / {Number(twitterMinFollowers).toLocaleString()}
               </p>
               <p>
                 <Progress percent={twitterLiveFollowersPercent}></Progress>
@@ -202,32 +194,34 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
           <p>{new Date(contract.endDate * 1000).toLocaleString()}</p>
           <p>({moment(new Date(contract.endDate * 1000)).from(new Date())})</p>
         </Card.Grid>
-        <Card.Grid>
-          <h4>
-            <img src="/eth.png" /> Balance
-          </h4>
-          <Divider type="horizontal" />
-          <p>
-            {balanceETH.toPrecision(4)} / {thresholdETH}
-          </p>
-          <p>
-            <Progress percent={balancePercent}></Progress>
-          </p>
-        </Card.Grid>
+        {thresholdETH > 0 && (
+          <Card.Grid>
+            <h4>
+              <img src="/eth.png" /> Balance
+            </h4>
+            <Divider type="horizontal" />
+            <p>
+              {balanceETH.toFixed(4)} / {thresholdETH.toFixed(4)}
+            </p>
+            <p>
+              <Progress percent={balancePercent}></Progress>
+            </p>
+          </Card.Grid>
+        )}
         <Card.Grid>
           <h4>
             <img src="/eth.png" /> Payment
           </h4>
           <Divider type="horizontal" />
           <p>
-            Initial deposit: <b>{Number(initialDeposit).toPrecision(3)}</b>
+            Initial deposit: <b>{Number(initialDeposit).toFixed(4)}</b>
           </p>
           <p>
             Provider&apos;s share: <b>{share}%</b>
           </p>
         </Card.Grid>
       </Card>
-      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
+      <Divider type="horizontal" style={{ marginBottom: "16px" }} />
     </List.Item>
   );
 };
@@ -311,7 +305,7 @@ export default function ContractList() {
     <>
       {!hasLoaded && <Spin size="large" style={{ width: "100%", marginTop: "64px" }} />}
       <h1 style={{ fontSize: "2.4rem", width: "100%" }}>Contracts I created</h1>
-      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
+      <Divider type="horizontal" style={{ marginBottom: "16px" }} />
       <List
         {...listProps}
         dataSource={contractsIOwn}
@@ -326,8 +320,8 @@ export default function ContractList() {
         }
       />
       <Divider type="horizontal" />
-      <h1 style={{ fontSize: "2.4rem", width: "100%" }}>Contracts I created</h1>
-      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
+      <h1 style={{ fontSize: "2.4rem", width: "100%" }}>Contracts where I provide</h1>
+      <Divider type="horizontal" style={{ marginBottom: "16px" }} />
       <List
         {...listProps}
         dataSource={contractsIProvide}
