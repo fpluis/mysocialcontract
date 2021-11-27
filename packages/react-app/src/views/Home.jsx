@@ -145,12 +145,12 @@ export default function HomeView() {
             <Row>
               <Col span={24} md={12}>
                 <Link style={{ fontSize: "24px", height: "50px" }} to="/help/requester">
-                  Looking for help with marketing
+                  <Button style={{ fontSize: "24px", height: "50px" }}>Looking for help with marketing</Button>
                 </Link>
               </Col>
               <Col span={24} md={12}>
                 <Link style={{ fontSize: "24px", height: "50px" }} to="/help/provider">
-                  Offering your marketing experience
+                  <Button style={{ fontSize: "24px", height: "50px" }}>Offering your marketing experience</Button>
                 </Link>
               </Col>
             </Row>
