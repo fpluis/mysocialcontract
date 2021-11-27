@@ -4,7 +4,7 @@ import { Link, Switch, Route, useLocation } from "react-router-dom";
 import { useAuthentication, useMyContracts, useRemoteStorage } from "../providers";
 import { PostDetail, PostEditorModal, OfferList, ProfileBadge } from "../components";
 import { MyContracts, MyRequests } from "./index";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { PlusCircleOutlined, TwitterOutlined, YoutubeOutlined } from "@ant-design/icons";
 import ReactTimeAgo from "react-time-ago";
 // import Blockies from "react-blockies";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
@@ -135,14 +135,37 @@ export default function PostsView() {
                 itemLayout="horizontal"
                 dataSource={posts}
                 renderItem={post => {
-                  const { author, title, createdAt } = post;
+                  const { author, title, createdAt, twitterUsername, ytChannelId, thresholdETH } = post;
                   return (
                     <Link to={`/posts/${post.objectId}`}>
                       <List.Item>
                         <List.Item.Meta
                           avatar={<ProfileBadge {...author} />}
-                          title={title}
-                          description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
+                          title={
+                            <Col span={24}>
+                              <Row>
+                                <Col span={createdAt ? 18 : 24}>
+                                  <h4>{title}</h4>
+                                </Col>
+                                {createdAt && (
+                                  <Col span={6}>
+                                    <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />
+                                  </Col>
+                                )}
+                              </Row>
+                            </Col>
+                          }
+                          description={
+                            <Row>
+                              {twitterUsername && (
+                                <TwitterOutlined style={{ color: "#1DA1F2", fontSize: "18px", marginRight: "8px" }} />
+                              )}
+                              {ytChannelId && (
+                                <YoutubeOutlined style={{ color: "#e52d27", fontSize: "18px", marginRight: "8px" }} />
+                              )}
+                              {thresholdETH && <img src="/eth.png" style={{ width: "18px" }} />}
+                            </Row>
+                          }
                         />
                       </List.Item>
                     </Link>
@@ -158,7 +181,7 @@ export default function PostsView() {
                 total={postCount}
               ></Pagination>
             </Col>
-            <Col span={16}>
+            <Col span={16} style={{ paddingLeft: "16px" }}>
               <Switch>
                 {posts.map((post, key) => (
                   <Route
