@@ -48,7 +48,11 @@ export default function AppBar() {
       <Row className="app-bar-container">
         <Col span={6}>
           <Link to={`/`}>
-            <Button icon={<HomeOutlined className={`icon ${currentTheme}`} />} />
+            <img
+              src="/mysocialcontract.svg"
+              className={`icon ${currentTheme}`}
+              style={{ height: "46px", marginTop: "22px" }}
+            />
           </Link>
         </Col>
         <Col span={6}>
