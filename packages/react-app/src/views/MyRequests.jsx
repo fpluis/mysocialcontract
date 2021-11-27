@@ -1,22 +1,262 @@
-import { List, Button, Col, Modal, Row, Space, message, Divider } from "antd";
+import { List, Button, Col, Modal, Row, Space, message, Divider, Tooltip, Table } from "antd";
 import React, { useMemo, useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useBlockchain, useRemoteStorage } from "../providers";
 import { useThemeSwitcher } from "react-css-theme-switcher";
-import { OfferList, PostEditorModal, Description, Conditions, ProfileBadge } from "../components/index";
-import { CloseOutlined, EditOutlined } from "@ant-design/icons";
+import { PostEditorModal, Description, Conditions, ProfileBadge } from "../components/index";
+import { CloseOutlined, EditOutlined, FormOutlined, MessageOutlined } from "@ant-design/icons";
+import { Link } from "react-router-dom";
 import moment from "moment";
 
 const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
   const { ytChannelId, twitterUsername } = post;
   return (
     <Modal title={title} visible={visible} onOk={onOk} onCancel={onCancel}>
-      <Conditions title={null} layout="horizontal" conditions={{ ...offer, twitterUsername, ytChannelId }} />
+      <Conditions title={null} column={1} layout="horizontal" conditions={{ ...offer, twitterUsername, ytChannelId }} />
     </Modal>
   );
 };
 
-const renderItem = ({ post, onEdit, onDelete, onComposeContract, onRejectOffer }) => {
+const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showPostLink }) => {
+  const {
+    author: provider,
+    createdAt,
+    status,
+    initialDeposit: offerInitialDeposit,
+    share: offerShare,
+    thresholdETH: offerThresholdETH = 0,
+    endDate: offerEndDate,
+    ytMinViewCount: offerYtMinViewCount = 0,
+    ytMinSubscriberCount: offerYtMinSubscriberCount = 0,
+    twitterMinFollowers: offerTwitterMinFollowers = 0,
+  } = offer;
+  const {
+    initialDeposit,
+    share,
+    thresholdETH = 0,
+    endDate,
+    ytMinViewCount = 0,
+    ytMinSubscriberCount = 0,
+    twitterMinFollowers = 0,
+  } = post;
+  const statusMessage = status === "active" ? <span>Pending</span> : <span style={{ color: "#388e3c" }}>Accepted</span>;
+  const actions = [
+    <Tooltip key="compose" position="top" text="Compose the contract">
+      <Button
+        icon={<FormOutlined />}
+        onClick={() => {
+          console.log(`Compose contract with post ${JSON.stringify(post)}`);
+          onComposeContract(offer, post);
+        }}
+      />
+    </Tooltip>,
+    <Tooltip key="reject" position="top" text="Message the user">
+      <Link to={`/chat/${provider.userId}`}>
+        <Button icon={<MessageOutlined />}></Button>
+      </Link>
+    </Tooltip>,
+    <Tooltip key="reject" position="top" text="Reject offer">
+      <Button
+        icon={<CloseOutlined />}
+        onClick={() => {
+          onRejectOffer(offer, post);
+        }}
+      />
+    </Tooltip>,
+  ];
+
+  const offerTable = [];
+
+  const initialDepositDiff = initialDeposit - offerInitialDeposit;
+  if (initialDepositDiff !== 0) {
+    offerTable.push({
+      key: offerTable.length + 1,
+      property: "Initial Deposit",
+      impact: initialDepositDiff > 0 ? "+" : "-",
+      requested: initialDeposit,
+      offered: offerInitialDeposit,
+      difference: initialDepositDiff.toFixed(4),
+    });
+  }
+
+  const shareDiff = share - offerShare;
+  if (shareDiff !== 0) {
+    offerTable.push({
+      key: offerTable.length + 1,
+      property: "Provider Share",
+      impact: shareDiff > 0 ? "+" : "-",
+      requested: `${share}%`,
+      offered: `${offerShare}%`,
+      difference: `${shareDiff}%`,
+    });
+  }
+
+  const thresholdETHDiff = thresholdETH - offerThresholdETH;
+  if (thresholdETHDiff !== 0) {
+    offerTable.push({
+      key: offerTable.length + 1,
+      property: "Threshold ETH",
+      impact: thresholdETHDiff > 0 ? "-" : "+",
+      requested: thresholdETH,
+      offered: offerThresholdETH,
+      difference: thresholdETHDiff,
+    });
+  }
+
+  const endDateDiff = endDate - offerEndDate;
+  if (endDateDiff !== 0) {
+    offerTable.push({
+      key: offerTable.length + 1,
+      property: "Deadline",
+      impact: endDateDiff > 0 ? "+" : "-",
+      requested: endDate,
+      offered: offerEndDate,
+      difference: endDateDiff,
+    });
+  }
+
+  const ytMinViewCountDiff = offerYtMinViewCount - ytMinViewCount;
+  if (ytMinViewCountDiff !== 0) {
+    offerTable.push({
+      key: offerTable.length + 1,
+      property: "Min. Youtube Views",
+      impact: ytMinViewCountDiff > 0 ? "+" : "-",
+      requested: ytMinViewCount,
+      offered: offerYtMinViewCount,
+      difference: ytMinViewCountDiff,
+    });
+  }
+
+  const ytMinSubscriberCountDiff = offerYtMinSubscriberCount - ytMinSubscriberCount;
+  if (ytMinSubscriberCountDiff !== 0) {
+    offerTable.push({
+      key: offerTable.length + 1,
+      property: "Min. Youtube Subscribers",
+      impact: ytMinSubscriberCountDiff > 0 ? "+" : "-",
+      requested: ytMinSubscriberCount,
+      offered: offerYtMinSubscriberCount,
+      difference: ytMinSubscriberCountDiff,
+    });
+  }
+
+  const twitterMinFollowersDiff = offerTwitterMinFollowers - twitterMinFollowers;
+  if (twitterMinFollowersDiff !== 0) {
+    offerTable.push({
+      key: offerTable.length + 1,
+      property: "Min. Twitter followers",
+      impact: twitterMinFollowersDiff > 0 ? "+" : "-",
+      requested: twitterMinFollowers,
+      offered: offerTwitterMinFollowers,
+      difference: twitterMinFollowersDiff,
+    });
+  }
+
+  if (offerTable.length === 0) {
+    offerTable.push({
+      key: 1,
+      property: "All conditions",
+      impact: "=",
+      requested: "Same",
+      offered: "Same",
+      difference: 0,
+    });
+  }
+
+  const columns = [
+    {
+      title: "Impact",
+      dataIndex: "impact",
+      key: "impact",
+    },
+    {
+      title: "Property",
+      dataIndex: "property",
+      key: "property",
+    },
+    {
+      title: "Requested",
+      dataIndex: "requested",
+      key: "requested",
+    },
+    {
+      title: "Offered",
+      dataIndex: "offered",
+      key: "offered",
+    },
+    {
+      title: "Difference",
+      dataIndex: "difference",
+      key: "difference",
+    },
+  ];
+
+  return (
+    <List.Item key={key}>
+      <List.Item.Meta
+        avatar={<ProfileBadge {...provider} />}
+        title={
+          <Col span={24}>
+            <Row>
+              <Col span={post && post.status !== "signed" ? 12 : 24}>
+                <h4>{provider.username}</h4>
+              </Col>
+              {post && post.status !== "signed" && (
+                <Col span={12}>
+                  <Space style={{ float: "right" }}>{actions}</Space>
+                </Col>
+              )}
+            </Row>
+          </Col>
+        }
+        description={
+          <Col span={24}>
+            <Row>
+              <h4 style={{ fontWeight: "bold" }}>Status: {statusMessage}</h4>
+            </Row>
+            {createdAt && (
+              <Row>
+                <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />
+              </Row>
+            )}
+          </Col>
+        }
+        locale="en-US"
+      />
+      <Table
+        dataSource={offerTable}
+        rowClassName={({ impact }) => (impact === "+" ? "positive" : impact === "-" ? "negative" : "equal")}
+        columns={columns}
+        pagination={false}
+        style={{ marginBottom: "32px" }}
+      />
+    </List.Item>
+  );
+};
+
+const OfferList = ({ offers, post, onRejectOffer, onComposeContract, showPostLink = true }) => {
+  console.log(`Render offer list; post: ${JSON.stringify(post)}`);
+  return (
+    <List
+      itemLayout="vertical"
+      size="small"
+      style={{ border: "1px solid rgba(0, 0, 0, 0.06)", marginTop: "16px" }}
+      className="offer-list"
+      dataSource={offers}
+      renderItem={(offer, index) =>
+        renderOffer({
+          offer,
+          post,
+          key: index,
+          onRejectOffer,
+          onComposeContract,
+          showPostLink,
+        })
+      }
+    ></List>
+  );
+};
+
+const renderRequest = ({ post, onEdit, onDelete, onComposeContract, onRejectOffer }) => {
   const { objectId, title, description, createdAt, author, offers = [], status } = post;
   const offersToShow = offers.filter(({ status }) => status !== "rejected");
   const statusMessage =
@@ -28,7 +268,7 @@ const renderItem = ({ post, onEdit, onDelete, onComposeContract, onRejectOffer }
         title={
           <Row>
             <Col span={20}>
-              <h4 style={{ fontWeight: "bold" }}>{title}</h4>
+              <h4 style={{ fontSize: "1.2rem" }}>{title}</h4>
             </Col>
             <Col span={4}>
               <Space style={{ float: "right" }}>
@@ -52,10 +292,10 @@ const renderItem = ({ post, onEdit, onDelete, onComposeContract, onRejectOffer }
         }
       />
       <Description text={description} />
-      <Conditions title={null} layout="horizontal" conditions={post} />
+      <Conditions title={null} column={2} layout="horizontal" conditions={post} />
       <Divider type="horizontal" />
-      <h1>Offers for this request</h1>
-      <div style={{ marginLeft: "48px" }}>
+      <div style={{ marginLeft: "64px" }}>
+        <h2>Offers for this request</h2>
         <OfferList
           showPostLink={false}
           offers={offersToShow}
@@ -179,7 +419,7 @@ export default function MyRequests() {
         itemLayout="vertical"
         size="default"
         dataSource={requests}
-        renderItem={post => renderItem({ post, currentTheme, onEdit, onDelete, onComposeContract, onRejectOffer })}
+        renderItem={post => renderRequest({ post, currentTheme, onEdit, onDelete, onComposeContract, onRejectOffer })}
       />
 
       {currentPost && (
