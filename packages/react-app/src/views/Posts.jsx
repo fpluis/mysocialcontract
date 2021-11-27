@@ -116,7 +116,7 @@ export default function PostsView() {
         <Route path="/me/offers">
           <Col span={24}>
             <h1 style={{ fontSize: "2.4rem", width: "100%" }}>Offers I&apos;ve made</h1>
-            <Divider type="horizontal" style={{ marginBottom: "64px" }} />
+            <Divider type="horizontal" style={{ marginBottom: "16px" }} />
             <OfferList
               offers={myOffers}
               onRejectOffer={offer => remoteStorage.setOfferStatus(offer.objectId, "rejected")}
@@ -130,7 +130,7 @@ export default function PostsView() {
         </Route>
         <Route path="/posts/:id?">
           <h1 style={{ fontSize: "2.4rem", width: "100%" }}>All Requests</h1>
-          <Divider type="horizontal" style={{ marginBottom: "64px" }} />
+          <Divider type="horizontal" style={{ marginBottom: "16px" }} />
           <Row style={{ marginTop: "16px" }}>
             <Col span={8} style={{ marginLeft: "32px" }}>
               <List
@@ -176,7 +176,7 @@ export default function PostsView() {
                 }}
               ></List>
             </Col>
-            <Col span={16} style={{ paddingLeft: "16px" }}>
+            <Col span={15} style={{ paddingLeft: "16px" }}>
               <Switch>
                 {posts.map((post, key) => (
                   <Route
@@ -191,7 +191,6 @@ export default function PostsView() {
           </Row>
           <Row>
             <Pagination
-              style={{ position: "absolute", bottom: 0 }}
               defaultCurrent={1}
               defaultPageSize={8}
               onChange={page => {
