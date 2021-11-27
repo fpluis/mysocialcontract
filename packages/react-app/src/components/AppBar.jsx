@@ -48,26 +48,17 @@ export default function AppBar() {
       <Row className="app-bar-container">
         <Col span={6}>
           <Link to={`/`}>
-            <img
-              src="/mysocialcontract.svg"
-              className={`img ${currentTheme}`}
-              style={{ height: "46px", marginTop: "22px" }}
-            />
+            <HomeOutlined className={`icon ${currentTheme}`} />
           </Link>
         </Col>
         <Col span={6}>
-          <Link to={`/posts/`}>
+          <Link to={`/posts/`} style={{ verticalAlign: "baseline" }}>
             <Badge dot={showContractNotification}>
               <Button
-                icon={
-                  <FileTextOutlined
-                    className={`icon ${currentTheme}`}
-                    onClick={() => {
-                      // setSeenContracts(true);
-                      setShowContractNotification(false);
-                    }}
-                  />
-                }
+                icon={<img src="/mysocialcontract.svg" className={`img ${currentTheme}`} style={{ height: "38px" }} />}
+                onClick={() => {
+                  setShowContractNotification(false);
+                }}
               ></Button>
             </Badge>
           </Link>
@@ -80,7 +71,6 @@ export default function AppBar() {
                   <MessageOutlined
                     className={`icon ${currentTheme}`}
                     onClick={() => {
-                      // setSeenChat(true);
                       setShowChatNotification(false);
                     }}
                   />
