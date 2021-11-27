@@ -30,7 +30,7 @@ export default function PostsView() {
   const createPost = async props => {
     const post = await remoteStorage.putPost(props);
     message.success("Post successfully created!");
-    setPosts(posts => [post.toJSON(), ...posts]);
+    setPosts(posts => (posts.length >= 8 ? [post.toJSON(), ...posts.slice(0, 7)] : [post.toJSON(), ...posts]));
   };
 
   useEffect(() => {
@@ -129,9 +129,9 @@ export default function PostsView() {
         <Route path="/posts/:id?">
           <h1 style={{ fontSize: "2.4rem", width: "100%" }}>All Requests</h1>
           <Row style={{ marginTop: "16px" }}>
-            <Col span={8}>
+            <Col span={8} style={{ marginLeft: "32px" }}>
               <List
-                style={{ marginLeft: "32px" }}
+                style={{ minHeight: "664px" }}
                 itemLayout="horizontal"
                 dataSource={posts}
                 renderItem={post => {
@@ -144,11 +144,11 @@ export default function PostsView() {
                           title={
                             <Col span={24}>
                               <Row>
-                                <Col span={createdAt ? 18 : 24}>
+                                <Col span={createdAt ? 17 : 24}>
                                   <h4>{title}</h4>
                                 </Col>
                                 {createdAt && (
-                                  <Col span={6}>
+                                  <Col span={7}>
                                     <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />
                                   </Col>
                                 )}
@@ -172,14 +172,6 @@ export default function PostsView() {
                   );
                 }}
               ></List>
-              <Pagination
-                defaultCurrent={1}
-                defaultPageSize={8}
-                onChange={page => {
-                  setPage(page);
-                }}
-                total={postCount}
-              ></Pagination>
             </Col>
             <Col span={16} style={{ paddingLeft: "16px" }}>
               <Switch>
@@ -193,6 +185,17 @@ export default function PostsView() {
                 ))}
               </Switch>
             </Col>
+          </Row>
+          <Row>
+            <Pagination
+              style={{ position: "absolute", bottom: 0 }}
+              defaultCurrent={1}
+              defaultPageSize={8}
+              onChange={page => {
+                setPage(page);
+              }}
+              total={postCount}
+            ></Pagination>
           </Row>
         </Route>
       </Switch>
