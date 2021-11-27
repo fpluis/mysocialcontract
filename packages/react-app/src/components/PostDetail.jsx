@@ -42,22 +42,22 @@ export default function PostDetail({ post }) {
           description={createdAt && <ReactTimeAgo date={new Date(createdAt)} locale="en-US" />}
         />
       </Card>
+      {user.authenticated() && author.userId !== myProfile.userId && (
+        <Row style={{ marginTop: "32px" }}>
+          <Link to={`/chat/${author.userId}`}>
+            <Button>Send a message</Button>
+          </Link>
+          <Button style={{ marginLeft: "16px" }} onClick={showModal}>
+            Make an offer
+          </Button>
+        </Row>
+      )}
       <Row>
         <p style={{ fontSize: "1.4rem", marginTop: "32px", marginBottom: "32px" }}>
           <Description text={description} />
         </p>
       </Row>
       <Conditions conditions={post} />
-      {user.authenticated() && author.userId !== myProfile.userId && (
-        <Row style={{ marginTop: "32px" }}>
-          <Button style={{ marginRight: "16px" }} onClick={showModal}>
-            Make an offer
-          </Button>
-          <Link to={`/chat/${author.userId}`}>
-            <Button>Send a message</Button>
-          </Link>
-        </Row>
-      )}
 
       <OfferModal title="Make an offer" post={post} visible={isModalVisible} onOk={putOffer} onCancel={closeModal} />
     </Col>

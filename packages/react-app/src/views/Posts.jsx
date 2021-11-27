@@ -127,8 +127,9 @@ export default function PostsView() {
           </Col>
         </Route>
         <Route path="/posts/:id?">
+          <h1 style={{ fontSize: "2.4rem", width: "100%" }}>All Requests</h1>
           <Row style={{ marginTop: "16px" }}>
-            <Col span={12}>
+            <Col span={8}>
               <List
                 style={{ marginLeft: "32px" }}
                 itemLayout="horizontal"
@@ -157,7 +158,7 @@ export default function PostsView() {
                 total={postCount}
               ></Pagination>
             </Col>
-            <Col span={12}>
+            <Col span={16}>
               <Switch>
                 {posts.map((post, key) => (
                   <Route
