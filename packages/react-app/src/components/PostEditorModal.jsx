@@ -112,7 +112,8 @@ export default function PostEditorModal({
         </Form.Item>
         <Form.Item name="ytChannelId" label="Youtube channel id">
           <Input
-            placeholder="Use the search above or input directly"
+            disabled={!hasAddedYtChannel}
+            placeholder="Write the username on the search above"
             onChange={event => {
               const { value } = event.target;
               console.log(`Value, `, value);
