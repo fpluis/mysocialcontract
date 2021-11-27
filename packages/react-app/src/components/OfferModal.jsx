@@ -17,15 +17,12 @@ export default function OfferModal({ visible, onCancel, onOk, title, post }) {
     <Modal visible={visible} title={title} footer={null} onCancel={onCancel}>
       <Form
         initialValues={initialValues}
-        style={{ marginTop: 64 }}
+        // style={{ marginTop: 64 }}
         name="validate_other"
         labelCol={{ span: 6 }}
         wrapperCol={{ span: 14 }}
         onFinish={onOk}
       >
-        <Form.Item name="comment" label="Comment">
-          <Input.TextArea rows={16} />
-        </Form.Item>
         <Form.Item name="initialDeposit" label="Initial deposit">
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
@@ -55,6 +52,9 @@ export default function OfferModal({ visible, onCancel, onOk, title, post }) {
             </Form.Item>
           </>
         )}
+        <Form.Item name="comment" label="Comment">
+          <Input.TextArea rows={8} />
+        </Form.Item>
 
         <Form.Item
           wrapperCol={{
