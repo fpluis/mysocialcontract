@@ -21,7 +21,6 @@ export default function PostEditorModal({
       <Form
         form={form}
         initialValues={initialValues}
-        style={{ marginTop: 64 }}
         name="validate_other"
         labelCol={{ span: 6 }}
         wrapperCol={{ span: 14 }}
@@ -65,19 +64,6 @@ export default function PostEditorModal({
           <InputNumber precision={0} min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item
-          name="endDate"
-          label="Deadline"
-          tooltip="The provider will have 1 day after this date to check the contract's conditions."
-          rules={[
-            {
-              required: true,
-              message: "Please specify a valid deadline",
-            },
-          ]}
-        >
-          <DatePicker />
-        </Form.Item>
-        <Form.Item
           name="initialDeposit"
           label="Initial deposit"
           tooltip="The amount you deposit at the start of the contract. If the contract fails, you get it all back."
@@ -89,6 +75,19 @@ export default function PostEditorModal({
           ]}
         >
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item
+          name="endDate"
+          label="Deadline"
+          tooltip="The provider will have 1 day after this date to check the contract's conditions."
+          rules={[
+            {
+              required: true,
+              message: "Please specify a valid deadline",
+            },
+          ]}
+        >
+          <DatePicker />
         </Form.Item>
         <Form.Item
           name="thresholdETH"

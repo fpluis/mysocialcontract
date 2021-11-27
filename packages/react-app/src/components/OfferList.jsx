@@ -55,11 +55,13 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
               <Col span={showPostLink ? 18 : 24}>
                 <h4>{provider.username}</h4>
               </Col>
-              <Col span={showPostLink ? 6 : 0} hidden={!showPostLink}>
-                <Button style={{ float: "right" }}>
-                  <Link to={`/posts/${postId}`}>View Post</Link>
-                </Button>
-              </Col>
+              {showPostLink && (
+                <Col span={6}>
+                  <Button style={{ float: "right" }}>
+                    <Link to={`/posts/${postId}`}>View Post</Link>
+                  </Button>
+                </Col>
+              )}
             </Row>
           </Col>
         }
@@ -79,7 +81,7 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
       />
 
       <Conditions title={null} layout="horizontal" conditions={offer} />
-      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
+      <Divider type="horizontal" style={{ marginBottom: "16px" }} />
     </List.Item>
   );
 };

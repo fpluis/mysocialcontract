@@ -50,7 +50,7 @@ export default function AppBar() {
           <Link to={`/`}>
             <img
               src="/mysocialcontract.svg"
-              className={`icon ${currentTheme}`}
+              className={`img ${currentTheme}`}
               style={{ height: "46px", marginTop: "22px" }}
             />
           </Link>
