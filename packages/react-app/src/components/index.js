@@ -1,4 +1,3 @@
-export { default as Blockie } from "./Blockie";
 export { default as EtherInput } from "./EtherInput";
 export { default as ThemeSwitch } from "./ThemeSwitch";
 export { default as AppBar } from "./AppBar";
