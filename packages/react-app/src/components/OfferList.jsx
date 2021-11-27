@@ -6,8 +6,8 @@ import { Conditions, ProfileBadge } from "./index";
 import { Link } from "react-router-dom";
 import "./OfferList.css";
 
-const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract }) => {
-  const { author: provider, createdAt, status } = offer;
+const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showPostLink }) => {
+  const { author: provider, createdAt, status, postId } = offer;
   const statusMessage =
     status === "active" ? (
       <span>Pending</span>
@@ -49,7 +49,20 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract }) => 
     <List.Item key={key} extra={post && post.status !== "signed" && <Space>{actions}</Space>}>
       <List.Item.Meta
         avatar={<ProfileBadge {...provider} />}
-        title={provider.username}
+        title={
+          <Col span={24}>
+            <Row>
+              <Col span={showPostLink ? 18 : 24}>
+                <h4>{provider.username}</h4>
+              </Col>
+              <Col span={showPostLink ? 6 : 0} hidden={!showPostLink}>
+                <Button style={{ float: "right" }}>
+                  <Link to={`/posts/${postId}`}>View Post</Link>
+                </Button>
+              </Col>
+            </Row>
+          </Col>
+        }
         description={
           <Col span={24}>
             <Row>
@@ -71,7 +84,7 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract }) => 
   );
 };
 
-export default function OfferList({ offers, post, onRejectOffer, onComposeContract }) {
+export default function OfferList({ offers, post, onRejectOffer, onComposeContract, showPostLink = true }) {
   console.log(`Render offer list; post: ${JSON.stringify(post)}`);
   return (
     <List
@@ -87,6 +100,7 @@ export default function OfferList({ offers, post, onRejectOffer, onComposeContra
           key: index,
           onRejectOffer,
           onComposeContract,
+          showPostLink,
         })
       }
     ></List>

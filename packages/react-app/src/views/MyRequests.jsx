@@ -1,4 +1,4 @@
-import { List, Button, Col, Modal, Row, Space, message } from "antd";
+import { List, Button, Col, Modal, Row, Space, message, Divider } from "antd";
 import React, { useMemo, useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { useAuthentication, useBlockchain, useRemoteStorage } from "../providers";
@@ -49,12 +49,17 @@ const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract, o
       />
       <Description text={description} />
       <Conditions title={null} layout="horizontal" conditions={post} />
-      <OfferList
-        offers={offersToShow}
-        post={post}
-        onComposeContract={onComposeContract}
-        onRejectOffer={onRejectOffer}
-      />
+      <Divider type="horizontal" />
+      <h1>Offers for this request</h1>
+      <div style={{ marginLeft: "48px" }}>
+        <OfferList
+          showPostLink={false}
+          offers={offersToShow}
+          post={post}
+          onComposeContract={onComposeContract}
+          onRejectOffer={onRejectOffer}
+        />
+      </div>
     </List.Item>
   );
 };
@@ -164,6 +169,8 @@ export default function MyRequests() {
 
   return (
     <>
+      <h1 style={{ fontSize: "2.4rem", width: "100%" }}>My Requests</h1>
+      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
       <List
         itemLayout="vertical"
         size="default"
