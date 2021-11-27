@@ -54,6 +54,7 @@ export default function PostEditorModal({
         <Form.Item
           name="share"
           label="Provider's share (%)"
+          tooltip="The percentage of the contract funds that the provider receives if the contract succeeds"
           rules={[
             {
               required: true,
@@ -66,6 +67,7 @@ export default function PostEditorModal({
         <Form.Item
           name="endDate"
           label="Deadline"
+          tooltip="The provider will have 1 day after this date to check the contract's conditions."
           rules={[
             {
               required: true,
@@ -78,6 +80,7 @@ export default function PostEditorModal({
         <Form.Item
           name="initialDeposit"
           label="Initial deposit"
+          tooltip="The amount you deposit at the start of the contract. If the contract fails, you get it all back."
           rules={[
             {
               required: true,
@@ -87,10 +90,18 @@ export default function PostEditorModal({
         >
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="thresholdETH" label="Threshold funds">
+        <Form.Item
+          name="thresholdETH"
+          label="Threshold funds"
+          tooltip="The minimum ETH that the contract must have by the deadline to succeed"
+        >
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="ytChannelName" label="Youtube channel name">
+        <Form.Item
+          name="ytChannelName"
+          label="Youtube channel name"
+          tooltip="You can take the channel's name from the channel's homepage URL, which usually looks like 'https://www.youtube.com/c/<CHANNEL_NAME>', where <CHANNEL_NAME> is the value you need to put here."
+        >
           <Input.Search
             placeholder="Search the Youtube channel id by name"
             loading={isSearching}
@@ -113,7 +124,7 @@ export default function PostEditorModal({
         <Form.Item name="ytChannelId" label="Youtube channel id">
           <Input
             disabled={!hasAddedYtChannel}
-            placeholder="Write the username on the search above"
+            placeholder="Use the search above with your channel's name"
             onChange={event => {
               const { value } = event.target;
               console.log(`Value, `, value);
@@ -134,6 +145,7 @@ export default function PostEditorModal({
           ]}
           name="ytMinViewCount"
           label="Youtube Views"
+          tooltip="The minimum Youtube views that your channel must have by the deadline to succeed"
         >
           <InputNumber
             disabled={!hasAddedYtChannel}
@@ -152,6 +164,7 @@ export default function PostEditorModal({
           ]}
           name="ytMinSubscriberCount"
           label="Youtube Subscribers"
+          tooltip="The minimum Youtube subscribers that your channel must have by the deadline to succeed"
         >
           <InputNumber
             disabled={!hasAddedYtChannel}
@@ -164,6 +177,7 @@ export default function PostEditorModal({
         <Form.Item name="twitterUsername" label="Twitter username">
           <Input
             placeholder="The Twitter handle without the '@' i.e. 'elonmusk'"
+            tooltip="Your Twitter handle without the '@'. You can find this on Twitter by clicking on 'Profile'"
             onChange={event => {
               const { value } = event.target;
               console.log(`Value, `, value);
@@ -184,6 +198,7 @@ export default function PostEditorModal({
           ]}
           name="twitterMinFollowers"
           label="Twitter followers"
+          tooltip="The minimum Twitter followers that your account must have by the deadline to succeed"
         >
           <InputNumber
             disabled={!hasAddedTwitterUser}

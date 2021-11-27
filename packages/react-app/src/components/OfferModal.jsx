@@ -23,31 +23,59 @@ export default function OfferModal({ visible, onCancel, onOk, title, post }) {
         wrapperCol={{ span: 14 }}
         onFinish={onOk}
       >
-        <Form.Item name="initialDeposit" label="Initial deposit">
+        <Form.Item
+          name="initialDeposit"
+          label="Initial deposit"
+          tooltip="The amount the requester deposits at the start of the contract. If the contract fails, the requester gets it all back."
+        >
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="share" label="Provider's share">
+        <Form.Item
+          name="share"
+          label="Provider's share"
+          tooltip="The percentage of the contract funds that the provider receives if the contract succeeds"
+        >
           <InputNumber min={0} max={100} placeholder="Between 0 and 100" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="thresholdETH" label="Threshold funds">
+        <Form.Item
+          name="thresholdETH"
+          label="Threshold funds"
+          tooltip="The minimum ETH that the contract must have by the deadline to succeed"
+        >
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="endDate" label="Deadline">
+        <Form.Item
+          name="endDate"
+          label="Deadline"
+          tooltip="The provider will have 1 day after this date to check the contract's conditions."
+        >
           <DatePicker />
         </Form.Item>
         {post.ytChannelId && (
           <>
-            <Form.Item name="ytMinViewCount" label="Youtube Views">
+            <Form.Item
+              name="ytMinViewCount"
+              label="Youtube Views"
+              tooltip="The minimum Youtube views that your channel must have by the deadline to succeed"
+            >
               <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
             </Form.Item>
-            <Form.Item name="ytMinSubscriberCount" label="Youtube Subscribers">
+            <Form.Item
+              name="ytMinSubscriberCount"
+              label="Youtube Subscribers"
+              tooltip="The minimum Youtube subscribers that your channel must have by the deadline to succeed"
+            >
               <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
             </Form.Item>
           </>
         )}
         {post.twitterUsername && (
           <>
-            <Form.Item name="twitterMinFollowers" label="Twitter followers">
+            <Form.Item
+              name="twitterMinFollowers"
+              label="Twitter followers"
+              tooltip="The minimum Twitter followers that your account must have by the deadline to succeed"
+            >
               <InputNumber placeholder="When the contract ends" style={{ width: "100%" }} />
             </Form.Item>
           </>
