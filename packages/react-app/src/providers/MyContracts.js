@@ -170,7 +170,7 @@ export const MyContractProvider = ({ children = null }) => {
       setContractSubscription(subscription);
       setHasLoaded(true);
     }
-  }, [user, blockchain.isReady]);
+  }, [user.authenticated(), myUserId, blockchain.isReady]);
 
   return (
     <ContractProviderContext.Provider value={{ contracts, setContracts, hasLoaded, event }}>
