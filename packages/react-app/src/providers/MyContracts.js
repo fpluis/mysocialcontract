@@ -147,6 +147,11 @@ export const MyContractProvider = ({ children = null }) => {
   };
 
   useEffect(async () => {
+    console.log(
+      `Run load-effect; user.authed? ${user.authenticated()}; myuserid ${myUserId}; blockchain ready ${
+        blockchain.isReady
+      }; has loaded? ${hasLoaded}`,
+    );
     if (user.authenticated() && myUserId && blockchain.isReady && !hasLoaded) {
       console.log(`LOAD CONTRACTS`);
       const contracts = await remoteStorage.getContracts({ ownerId: myUserId, providerId: myUserId });

@@ -150,7 +150,7 @@ export const BlockchainProvider = ({ children = null }) => {
       Blockchain.web3 = web3;
       Blockchain.isReady = true;
     }
-  }, [Authentication.user]);
+  }, [Authentication.user.authenticated()]);
   return <BlockchainProviderContext.Provider value={Blockchain}>{children}</BlockchainProviderContext.Provider>;
 };
 
