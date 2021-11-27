@@ -266,7 +266,8 @@ export default function ContractList() {
   return (
     <>
       {!hasLoaded && <Spin size="large" style={{ width: "100%", marginTop: "64px" }} />}
-      <h1 style={{ marginLeft: "16px", marginTop: "16px" }}>Contracts I created</h1>
+      <h1 style={{ fontSize: "2.4rem", width: "100%" }}>Contracts I created</h1>
+      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
       <List
         {...listProps}
         dataSource={contractsIOwn}
@@ -281,7 +282,8 @@ export default function ContractList() {
         }
       />
       <Divider type="horizontal" />
-      <h1>Contracts where I provide</h1>
+      <h1 style={{ fontSize: "2.4rem", width: "100%" }}>Contracts I created</h1>
+      <Divider type="horizontal" style={{ marginBottom: "64px" }} />
       <List
         {...listProps}
         dataSource={contractsIProvide}

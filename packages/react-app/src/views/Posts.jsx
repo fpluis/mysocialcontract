@@ -115,6 +115,8 @@ export default function PostsView() {
         </Route>
         <Route path="/me/offers">
           <Col span={24}>
+            <h1 style={{ fontSize: "2.4rem", width: "100%" }}>Offers I&apos;ve made</h1>
+            <Divider type="horizontal" style={{ marginBottom: "64px" }} />
             <OfferList
               offers={myOffers}
               onRejectOffer={offer => remoteStorage.setOfferStatus(offer.objectId, "rejected")}
@@ -128,6 +130,7 @@ export default function PostsView() {
         </Route>
         <Route path="/posts/:id?">
           <h1 style={{ fontSize: "2.4rem", width: "100%" }}>All Requests</h1>
+          <Divider type="horizontal" style={{ marginBottom: "64px" }} />
           <Row style={{ marginTop: "16px" }}>
             <Col span={8} style={{ marginLeft: "32px" }}>
               <List
