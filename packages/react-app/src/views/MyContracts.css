@@ -1,0 +1,19 @@
+.contract-progress .ant-card-grid {
+  text-align: center;
+}
+
+.contract-progress .ant-card-grid h4 {
+  font-size: 28px;
+}
+
+.contract-progress .ant-card-grid h4 > span {
+  font-size: 28px;
+}
+
+.contract-progress .ant-card-grid h4 > img {
+  width: 28px;
+}
+
+.contract-progress .ant-card-grid p {
+  font-size: 1.3rem;
+}

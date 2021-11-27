@@ -1,8 +1,11 @@
-import { List, Button, Col, Row, Descriptions, Progress, Divider, Statistic, Spin, Modal, Result } from "antd";
+import { ClockCircleOutlined, TwitterOutlined, YoutubeOutlined } from "@ant-design/icons";
+import { List, Button, Col, Row, Descriptions, Progress, Divider, Statistic, Spin, Modal, Result, Card } from "antd";
 import React, { useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { Conditions, ProfileBadge } from "../components";
 import { useAuthentication, useBlockchain, useMyContracts } from "../providers";
+import moment from "moment";
+import "./MyContracts.css";
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
@@ -17,15 +20,19 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
     isSuccessful,
     balance,
     thresholdETH,
-    ytViews,
-    ytSubs,
+    // ytViews,
+    // ytSubs,
+    // twitterFollowers,
     liveYtViewCount,
     liveYtSubCount,
     ytMinViewCount,
     ytMinSubscriberCount,
-    twitterFollowers,
     twitterMinFollowers,
     liveTwitterFollowers,
+    ytChannelId,
+    twitterUsername,
+    initialDeposit,
+    share,
   } = contract;
 
   const deadlineInSeconds = contract.endDate;
@@ -33,10 +40,10 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
   const gracePeriodEnd = deadlineInSeconds + ONE_DAY_IN_SECONDS;
   const balanceETH = balance / 1000000000000000000;
   const balancePercent = thresholdETH === 0 || isSuccessful ? 100 : Math.min((balance / thresholdETH) * 100, 100);
-  const ytViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((ytViews / ytMinViewCount) * 100, 100);
-  const ytSubsPercent = ytMinSubscriberCount === 0 ? 100 : Math.min((ytSubs / ytMinSubscriberCount) * 100, 100);
-  const twitterFollowersPercent =
-    twitterMinFollowers === 0 ? 100 : Math.min((twitterFollowers / twitterMinFollowers) * 100, 100);
+  // const ytViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((ytViews / ytMinViewCount) * 100, 100);
+  // const ytSubsPercent = ytMinSubscriberCount === 0 ? 100 : Math.min((ytSubs / ytMinSubscriberCount) * 100, 100);
+  // const twitterFollowersPercent =
+  //   twitterMinFollowers === 0 ? 100 : Math.min((twitterFollowers / twitterMinFollowers) * 100, 100);
   const ytLiveViewsPercent = ytMinViewCount === 0 ? 100 : Math.min((liveYtViewCount / ytMinViewCount) * 100, 100);
   const ytLiveSubPercent =
     ytMinSubscriberCount === 0 ? 100 : Math.min((liveYtSubCount / ytMinSubscriberCount) * 100, 100);
@@ -66,6 +73,12 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
       !isOwnerPaid &&
       ["failed", "successful"].includes(status));
 
+  const conditionsFulfilled =
+    balance >= thresholdETH &&
+    (ytMinViewCount === 0 || liveYtViewCount > ytMinViewCount) &&
+    (ytMinSubscriberCount === 0 || liveYtSubCount > ytMinSubscriberCount) &&
+    (twitterMinFollowers === 0 || liveTwitterFollowers > twitterMinFollowers);
+
   return (
     <List.Item key={key} style={{ marginTop: "32px" }}>
       <List.Item.Meta
@@ -86,6 +99,17 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
                     View on Etherscan
                   </a>
                 </Button>
+                {conditionsFulfilled && !isSuccessful && (
+                  <Button
+                    disabled={isSuccessful}
+                    style={{ float: "right" }}
+                    onClick={async () => {
+                      openConditionsModal(contract);
+                    }}
+                  >
+                    Sync contract
+                  </Button>
+                )}
                 {canWithdraw && (
                   <Button
                     style={{ marginRight: "8px", float: "right" }}
@@ -116,79 +140,99 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
           </Col>
         }
       />
-      <div className="ant-descriptions-header">
+      {/* <div className="ant-descriptions-header">
         <div className="ant-descriptions-title">Conditions</div>
-      </div>
+      </div> */}
 
-      <Conditions title={null} layout="horizontal" conditions={contract} />
-      <Descriptions style={{ marginTop: "32px" }} title="Live progress" bordered column={1} layout={"horizontal"}>
-        {ytMinViewCount && (
-          <Descriptions.Item label={<Statistic title="Youtube views" value={liveYtViewCount} precision={0} />}>
-            <Progress percent={ytLiveViewsPercent}></Progress>
-          </Descriptions.Item>
+      {/* <Conditions title={null} layout="horizontal" conditions={contract} /> */}
+      <Card title={null} className="contract-progress">
+        {ytChannelId && liveYtViewCount && (
+          <Card.Grid>
+            <a rel="noopener noreferrer" target="_blank" href={`https://www.youtube.com/channel/${ytChannelId}`}>
+              <h4>
+                <YoutubeOutlined style={{ color: "#e52d27" }} /> Views
+              </h4>
+              <Divider type="horizontal" />
+              <p>
+                {Number(liveYtViewCount).toLocaleString()} / {ytMinViewCount}
+              </p>
+              <p>
+                <Progress percent={ytLiveViewsPercent}></Progress>
+              </p>
+            </a>
+          </Card.Grid>
         )}
-        {ytMinSubscriberCount && (
-          <Descriptions.Item label={<Statistic title="Youtube subs" value={liveYtSubCount} precision={0} />}>
-            <Progress percent={ytLiveSubPercent}></Progress>
-          </Descriptions.Item>
+        {ytChannelId && liveYtSubCount && (
+          <Card.Grid>
+            <a rel="noopener noreferrer" target="_blank" href={`https://www.youtube.com/channel/${ytChannelId}`}>
+              <h4>
+                <YoutubeOutlined style={{ color: "#e52d27" }} /> Subscribers
+              </h4>
+              <Divider type="horizontal" />
+              <p>
+                {Number(liveYtSubCount).toLocaleString()} / {ytMinSubscriberCount}
+              </p>
+              <p>
+                <Progress percent={ytLiveSubPercent}></Progress>
+              </p>
+            </a>
+          </Card.Grid>
         )}
-        {twitterMinFollowers && (
-          <Descriptions.Item label={<Statistic title="Twitter followers" value={liveTwitterFollowers} precision={0} />}>
-            <Progress percent={twitterLiveFollowersPercent}></Progress>
-          </Descriptions.Item>
+        {liveTwitterFollowers && twitterUsername && (
+          <Card.Grid>
+            <a rel="noopener noreferrer" target="_blank" href={`https://twitter.com/${twitterUsername}`}>
+              <h4>
+                <TwitterOutlined style={{ color: "#1DA1F2" }} /> Followers
+              </h4>
+              <Divider type="horizontal" />
+              <p>
+                {Number(liveTwitterFollowers).toLocaleString()} / {twitterMinFollowers}
+              </p>
+              <p>
+                <Progress percent={twitterLiveFollowersPercent}></Progress>
+              </p>
+            </a>
+          </Card.Grid>
         )}
-      </Descriptions>
-      <Descriptions
-        style={{ marginTop: "32px" }}
-        title={
-          <Col span={24}>
-            <Row>
-              <Col span={6}>
-                <span>Contract state</span>
-              </Col>
-              <Col span={18}>
-                <Button
-                  disabled={isSuccessful}
-                  style={{ float: "right" }}
-                  onClick={async () => {
-                    openConditionsModal(contract);
-                  }}
-                >
-                  Update state
-                </Button>
-              </Col>
-            </Row>
-          </Col>
-        }
-        bordered
-        column={1}
-        layout={"horizontal"}
-      >
-        <Descriptions.Item label={<Statistic title="Balance (ETH)" value={balanceETH} precision={4} />}>
-          <Progress percent={balancePercent}></Progress>
-        </Descriptions.Item>
-        {ytMinViewCount && (
-          <Descriptions.Item label={<Statistic title="Youtube views" value={ytViews} precision={0} />}>
-            <Progress percent={ytViewsPercent}></Progress>
-          </Descriptions.Item>
-        )}
-        {ytMinSubscriberCount && (
-          <Descriptions.Item label={<Statistic title="Youtube subs" value={ytSubs} precision={0} />}>
-            <Progress percent={ytSubsPercent}></Progress>
-          </Descriptions.Item>
-        )}
-        {twitterMinFollowers && (
-          <Descriptions.Item label={<Statistic title="Twitter followers" value={twitterFollowers} precision={0} />}>
-            <Progress percent={twitterFollowersPercent}></Progress>
-          </Descriptions.Item>
-        )}
-      </Descriptions>
+        <Card.Grid>
+          <h4>
+            <ClockCircleOutlined /> Deadline
+          </h4>
+          <Divider type="horizontal" />
+          <p>{new Date(contract.endDate * 1000).toLocaleString()}</p>
+          <p>({moment(new Date(contract.endDate * 1000)).from(new Date())})</p>
+        </Card.Grid>
+        <Card.Grid>
+          <h4>
+            <img src="/eth.png" /> Balance
+          </h4>
+          <Divider type="horizontal" />
+          <p>
+            {balanceETH.toPrecision(4)} / {thresholdETH}
+          </p>
+          <p>
+            <Progress percent={balancePercent}></Progress>
+          </p>
+        </Card.Grid>
+        <Card.Grid>
+          <h4>
+            <img src="/eth.png" /> Payment
+          </h4>
+          <Divider type="horizontal" />
+          <p>
+            Initial deposit: <b>{Number(initialDeposit).toPrecision(3)}</b>
+          </p>
+          <p>
+            Provider&apos;s share: <b>{share}%</b>
+          </p>
+        </Card.Grid>
+      </Card>
       <Divider type="horizontal" style={{ marginBottom: "64px" }} />
     </List.Item>
   );
 };
 
-const ResultsModal = ({ visible, title, onOk, onCancel, needsLink, isSuccessful }) => {
+const ConditionsModal = ({ visible, title, onOk, onCancel, needsLink, isSuccessful }) => {
   const [isCheckingConditions, setIsCheckingConditions] = useState(false);
   return (
     <Modal visible={visible} title={title} footer={null} onCancel={onCancel}>
@@ -211,8 +255,8 @@ const ResultsModal = ({ visible, title, onOk, onCancel, needsLink, isSuccessful 
         <Result
           title={
             needsLink
-              ? "Make sure you have at least 0.1 LINK and some ETH to pay for the transaction"
-              : "Make sure you have some ETH to pay for the transaction"
+              ? "Now that all the conditions are met, it's time to synchronize the contract so you can withdraw your share. Make sure you have at least 0.1 LINK and some ETH to pay for the transaction"
+              : "Now that all the conditions are met, it's time to synchronize the contract so you can withdraw your share. Make sure you have some ETH to pay for the transaction"
           }
           extra={
             <Button
@@ -297,7 +341,7 @@ export default function ContractList() {
           })
         }
       />
-      <ResultsModal
+      <ConditionsModal
         visible={isResultsModalVisible}
         title="Check the contract's conditions"
         isSuccessful={
@@ -309,7 +353,7 @@ export default function ContractList() {
           setCurrentContract(null);
         }}
         onOk={() => checkConditions(currentContract)}
-      ></ResultsModal>
+      ></ConditionsModal>
     </>
   );
 }
