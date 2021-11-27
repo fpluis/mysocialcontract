@@ -16,24 +16,28 @@ const ContractModal = ({ title, visible, post, offer, onOk, onCancel }) => {
   );
 };
 
-const renderItem = ({ post, currentTheme, onEdit, onDelete, onComposeContract, onRejectOffer }) => {
+const renderItem = ({ post, onEdit, onDelete, onComposeContract, onRejectOffer }) => {
   const { objectId, title, description, createdAt, author, offers = [], status } = post;
   const offersToShow = offers.filter(({ status }) => status !== "rejected");
   const statusMessage =
     status === "active" ? <span>Accepting offers</span> : <span style={{ color: "#388e3c" }}>Signed</span>;
   return (
-    <List.Item
-      key={objectId}
-      extra={
-        <Space>
-          <Button key="edit" icon={<EditOutlined />} onClick={() => onEdit(post)} />
-          <Button key="reject" icon={<CloseOutlined />} onClick={() => onDelete(post)} />
-        </Space>
-      }
-    >
+    <List.Item key={objectId}>
       <List.Item.Meta
         avatar={<ProfileBadge {...author} />}
-        title={title}
+        title={
+          <Row>
+            <Col span={20}>
+              <h4 style={{ fontWeight: "bold" }}>{title}</h4>
+            </Col>
+            <Col span={4}>
+              <Space style={{ float: "right" }}>
+                <Button key="edit" icon={<EditOutlined />} onClick={() => onEdit(post)} />
+                <Button key="reject" icon={<CloseOutlined />} onClick={() => onDelete(post)} />
+              </Space>
+            </Col>
+          </Row>
+        }
         description={
           <Col span={24}>
             <Row>
