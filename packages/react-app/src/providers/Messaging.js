@@ -66,13 +66,15 @@ export const MessagingProvider = ({ children = null }) => {
 
       setChats(currentChats => {
         const chat = currentChats.find(({ objectId }) => objectId === chatId);
-        const [lastMessage] =
-          messages.length === 0
-            ? [{ createdAt: chat.createdAt }]
-            : messages.sort(({ createdAt: createdAt1 }, { createdAt: createdAt2 }) => createdAt2 - createdAt1);
-        chat.lastMessageDate = lastMessage.createdAt;
-        if (unread > 0) {
-          chat.unread += unread;
+        if (chat) {
+          const [lastMessage] =
+            messages.length === 0
+              ? [{ createdAt: chat.createdAt || new Date().toISOString() }]
+              : messages.sort(({ createdAt: createdAt1 }, { createdAt: createdAt2 }) => createdAt2 - createdAt1);
+          chat.lastMessageDate = lastMessage.createdAt;
+          if (unread > 0) {
+            chat.unread += unread;
+          }
         }
 
         return [...currentChats];

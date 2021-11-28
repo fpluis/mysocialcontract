@@ -102,7 +102,7 @@ export default function OfferList({ offers, post, onRejectOffer, onComposeContra
           key: index,
           onRejectOffer,
           onComposeContract,
-          showPostLink,
+          showPostLink: showPostLink && !offer.status === "accepted",
         })
       }
     ></List>

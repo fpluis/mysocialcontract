@@ -30,6 +30,7 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
     ytMinViewCount: offerYtMinViewCount = 0,
     ytMinSubscriberCount: offerYtMinSubscriberCount = 0,
     twitterMinFollowers: offerTwitterMinFollowers = 0,
+    comment,
   } = offer;
   const {
     initialDeposit,
@@ -111,7 +112,7 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
     offerTable.push({
       key: offerTable.length + 1,
       property: "Deadline",
-      impact: endDateDiff > 0 ? "+" : "-",
+      impact: endDateDiff > 0 ? "-" : "+",
       requested: requestedDate.toLocaleDateString(),
       offered: offeredDate.toLocaleDateString(),
       difference: moment(requestedDate).to(offeredDate),
@@ -225,6 +226,7 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
         }
         locale="en-US"
       />
+      <Description text={comment} />
       <Table
         dataSource={offerTable}
         rowClassName={({ impact }) => (impact === "+" ? "positive" : impact === "-" ? "negative" : "equal")}

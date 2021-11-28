@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, Button, Row, Col, Badge } from "antd";
-import { MessageOutlined, HomeOutlined, FileTextOutlined, LoginOutlined } from "@ant-design/icons";
-import { useAuthentication, useMessaging, useMyContracts } from "../providers";
+import { MessageOutlined, HomeOutlined, LoginOutlined } from "@ant-design/icons";
+import { useAuthentication, useMessaging } from "../providers";
 import Blockies from "react-blockies";
 import { useThemeSwitcher } from "react-css-theme-switcher";
 import "./AppBar.css";
@@ -11,8 +11,6 @@ export default function AppBar() {
   const { user, profile, notifications, login } = useAuthentication();
   const { currentTheme } = useThemeSwitcher();
   const { chats } = useMessaging();
-  // const [seenContracts, setSeenContracts] = useState(false);
-  // const [seenChat, setSeenChat] = useState(false);
   const [showContractNotification, setShowContractNotification] = useState(false);
   const [showChatNotification, setShowChatNotification] = useState(false);
   const { ethAddress = "", username = "", profilePicture } = profile;
@@ -21,7 +19,6 @@ export default function AppBar() {
   const [route, setRoute] = useState("/");
 
   useEffect(() => {
-    // console.log(`Window route ${window.location.hash.replace(/^#/, "")}`);
     setRoute(window.location.hash.replace(/^#/, ""));
   }, [setRoute, window.location.hash]);
 
@@ -36,7 +33,6 @@ export default function AppBar() {
 
   useEffect(() => {
     if (chats.some(({ unread }) => unread > 0) && !route.startsWith("/chat/")) {
-      // console.log(`Show appbar chat notification`);
       setShowChatNotification(true);
     }
   }, [chats, route]);

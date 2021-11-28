@@ -93,6 +93,12 @@ export default function PostEditorModal({
           name="thresholdETH"
           label="Threshold funds"
           tooltip="The minimum ETH that the contract must have by the deadline to succeed"
+          rules={[
+            {
+              required: !hasAddedYtChannel && !hasAddedTwitterUser,
+              message: "You have to specify at least a minimum ETH to gain, a Youtube channel or a Twitter user",
+            },
+          ]}
         >
           <InputNumber placeholder="In ETH" style={{ width: "100%" }} />
         </Form.Item>

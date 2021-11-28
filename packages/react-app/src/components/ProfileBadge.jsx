@@ -26,13 +26,20 @@ const amountsFormatter = (num, digits) => {
   return item ? (num / item.value).toFixed(digits).replace(rx, "$1") + item.symbol : "0";
 };
 
-export default function ProfileBadge({
-  username,
-  profilePicture,
-  ethAddress,
-  achievements: { owner, provider, contractAddresses },
-}) {
+export default function ProfileBadge({ username, profilePicture, ethAddress, achievements }) {
   const { currentTheme } = useThemeSwitcher();
+  if (achievements == null || !achievements.owner || !achievements.provider || !achievements.contractAddresses) {
+    return (
+      <Avatar
+        className={`icon ${currentTheme}`}
+        size={48}
+        alt={username}
+        src={profilePicture || <Blockies size={48} seed={ethAddress.toLowerCase()} />}
+      ></Avatar>
+    );
+  }
+
+  const { owner, provider, contractAddresses } = achievements;
   const content = (
     <Col span={24} style={{ width: "400px" }}>
       <Row>

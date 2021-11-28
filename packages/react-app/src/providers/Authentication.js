@@ -93,10 +93,31 @@ export const AuthenticationProvider = ({ children = null }) => {
         user = authenticatedUser;
         let profile = await getProfile(user.id);
         if (profile == null) {
+          const achievementsFile = new Moralis.File(`${user.id}-achievements.json`, {
+            base64: btoa(
+              JSON.stringify({
+                owner: {
+                  youtubeViews: 0,
+                  youtubeSubs: 0,
+                  twitterFollowers: 0,
+                  ethereum: 0,
+                },
+                provider: {
+                  youtubeViews: 0,
+                  youtubeSubs: 0,
+                  twitterFollowers: 0,
+                  ethereum: 0,
+                },
+                contractAddresses: [],
+              }),
+            ),
+          });
+          await achievementsFile.saveIPFS();
           profile = new ProfileObject({
             ethAddress: user.get("ethAddress"),
             username: user.get("username"),
             userId: user.id,
+            achievementsFile,
           });
           const acl = new Moralis.ACL();
           acl.setPublicReadAccess(true);

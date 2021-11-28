@@ -42,6 +42,9 @@ export default function ChatView() {
         const chat = await createChat(myUserId, destinataryId);
         setIsNewChat(true);
         setCurrentChat(chat);
+        const newPath = location.pathname.replace(/\/chat\/?(\w+\/?)?/, `/chat/${destinataryId}/`);
+        console.log(`Location pathname: ${location.pathname}; new path ${newPath}`);
+        history.replace({ pathname: newPath });
       }
     }
     // else if (chats.length > 0) {

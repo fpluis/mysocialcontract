@@ -4,7 +4,7 @@ import { useAuthentication, useBlockchain, useLocalStorage } from ".";
 import { ProfileObject, OfferObject, PostObject, ContractObject } from "../classes";
 
 const IPFS_ENDPOINT = "https://ipfs.moralis.io:2053/ipfs";
-const POST_QUERY_LIMIT = 8;
+const POST_QUERY_LIMIT = 6;
 
 export const RemoteStorage = (LocalStorage = localStorage, Authentication = { user: null }, Blockchain = null) => {
   const getAchievements = async ipfsHash => {

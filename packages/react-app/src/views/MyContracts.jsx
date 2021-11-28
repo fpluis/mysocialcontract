@@ -1,6 +1,6 @@
 import { ClockCircleOutlined, TwitterOutlined, YoutubeOutlined } from "@ant-design/icons";
 import { List, Button, Col, Row, Descriptions, Progress, Divider, Statistic, Spin, Modal, Result, Card } from "antd";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactTimeAgo from "react-time-ago";
 import { ProfileBadge } from "../components";
 import { useAuthentication, useBlockchain, useMyContracts } from "../providers";
@@ -98,7 +98,7 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
                 {conditionsFulfilled && !isSuccessful && (
                   <Button
                     disabled={isSuccessful}
-                    style={{ float: "right" }}
+                    style={{ marginRight: "8px", float: "right" }}
                     onClick={async () => {
                       openConditionsModal(contract);
                     }}
@@ -278,6 +278,19 @@ export default function ContractList() {
   const { contracts, event, hasLoaded } = useMyContracts();
   const [isResultsModalVisible, setIsResultsModalVisible] = useState(false);
   const [currentContract, setCurrentContract] = useState();
+  const [currentContractIsSuccessful, setCurrentContractIsSuccessful] = useState(false);
+
+  useEffect(() => {
+    if (
+      !currentContractIsSuccessful &&
+      event &&
+      currentContract &&
+      event.event === "OnSuccess" &&
+      event.address === currentContract.contractAddress
+    ) {
+      setCurrentContractIsSuccessful(true);
+    }
+  }, [currentContract, currentContractIsSuccessful, event]);
 
   const withdraw = contract => blockchain.withdraw(contract.contractAddress);
 
@@ -338,13 +351,12 @@ export default function ContractList() {
       <ConditionsModal
         visible={isResultsModalVisible}
         title="Check the contract's conditions"
-        isSuccessful={
-          event && currentContract && event.event === "OnSuccess" && event.address === currentContract.contractAddress
-        }
+        isSuccessful={currentContractIsSuccessful}
         needsLink={currentContract != null && needsLink(currentContract)}
         onCancel={() => {
           setIsResultsModalVisible(false);
           setCurrentContract(null);
+          setCurrentContractIsSuccessful(false);
         }}
         onOk={() => checkConditions(currentContract)}
       ></ConditionsModal>

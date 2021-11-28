@@ -1,11 +1,13 @@
 import { Col, Row, Typography, List, Button } from "antd";
 import React from "react";
+import { useThemeSwitcher } from "react-css-theme-switcher";
 import { Link, Route, Switch } from "react-router-dom";
 import { useAuthentication } from "../providers";
 import "./Home.css";
 
 export default function HomeView() {
   const { login } = useAuthentication();
+  const { currentTheme } = useThemeSwitcher();
   return (
     <Row className="home-container">
       <Switch>
@@ -137,6 +139,30 @@ export default function HomeView() {
         </Route>
         <Route path="/">
           <Col span={24} style={{ textAlign: "center" }}>
+            <img
+              className={`img ${currentTheme}`}
+              src="/mysocialcontract.svg"
+              style={{
+                width: "128px",
+                height: "128px",
+                position: "absolute",
+                top: "15%",
+                left: "50%",
+                marginRight: "-50%",
+                transform: "translate(-50%, -50%)",
+                opacity: 0.2,
+              }}
+            ></img>
+            <h1
+              style={{
+                fontSize: "2.4rem",
+                marginBottom: "128px",
+                zIndex: 1,
+              }}
+            >
+              Mysocialcontract
+            </h1>
+
             <Row>
               <Col span={24}>
                 <p>Are you...</p>

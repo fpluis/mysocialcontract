@@ -1,13 +1,14 @@
 import { Row, Col, List, Avatar, Menu, Button, message, Divider, Badge, Pagination } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, Switch, Route, useLocation } from "react-router-dom";
 import { useAuthentication, useMyContracts, useRemoteStorage } from "../providers";
 import { PostDetail, PostEditorModal, OfferList, ProfileBadge } from "../components";
 import { MyContracts, MyRequests } from "./index";
 import { PlusCircleOutlined, TwitterOutlined, YoutubeOutlined } from "@ant-design/icons";
 import ReactTimeAgo from "react-time-ago";
-// import Blockies from "react-blockies";
 // import { useThemeSwitcher } from "react-css-theme-switcher";
+
+const PAGE_SIZE = 6;
 
 export default function PostsView() {
   const location = useLocation();
@@ -15,11 +16,11 @@ export default function PostsView() {
   const remoteStorage = useRemoteStorage();
   const [isPostModalVisible, setCreatePostModalVisible] = useState(location.search === "?create");
   const [posts, setPosts] = useState([]);
-  const [params, setParams] = useState({});
   const [page, setPage] = useState(0);
   const [route, setRoute] = useState("/posts/");
   const [myOffers, setMyOffers] = useState([]);
   const [postCount, setPostCount] = useState(0);
+  const [selected, setSelected] = useState();
 
   useMemo(() => {
     remoteStorage.countPosts().then(count => {
@@ -30,8 +31,16 @@ export default function PostsView() {
   const createPost = async props => {
     const post = await remoteStorage.putPost(props);
     message.success("Post successfully created!");
-    setPosts(posts => (posts.length >= 8 ? [post.toJSON(), ...posts.slice(0, 7)] : [post.toJSON(), ...posts]));
+    setPosts(posts => (posts.length >= PAGE_SIZE ? [post.toJSON(), ...posts.slice(0, 7)] : [post.toJSON(), ...posts]));
   };
+
+  const changeLocation = useCallback(
+    newLocation => {
+      console.log(`Change location to ${newLocation}`);
+      window.location.hash = `#${newLocation}`;
+    },
+    [window.location.hash],
+  );
 
   useEffect(() => {
     const newRoute = window.location.hash.replace(/^#/, "");
@@ -54,9 +63,21 @@ export default function PostsView() {
   }, [setRoute, notifications, window.location.hash]);
 
   useMemo(async () => {
-    const posts = await remoteStorage.getPosts({ ...params, status: "active", page: page - 1 });
+    const posts = await remoteStorage.getPosts({ status: "active", page: page - 1 });
     setPosts(posts);
-  }, [params, page]);
+    console.log(`Posts loaded`);
+    // changeLocation(`/posts/`);
+  }, [page]);
+
+  useMemo(async () => {
+    console.log(`Effect; posts ${JSON.stringify(posts.length)}, route ${route}`);
+    if (posts.length > 0 && route === "/posts/") {
+      console.log(`Post 0: ${JSON.stringify(posts[0])}`);
+      setRoute(`/posts/${posts[0].objectId}`);
+      setSelected(posts[0].objectId);
+      changeLocation(`/posts/${posts[0].objectId}`);
+    }
+  }, [posts, route]);
 
   useMemo(async () => {
     if (myProfile.userId) {
@@ -132,7 +153,7 @@ export default function PostsView() {
           <h1 style={{ fontSize: "2.4rem", width: "100%" }}>All Requests</h1>
           <Divider type="horizontal" style={{ marginBottom: "16px" }} />
           <Row style={{ marginTop: "16px" }}>
-            <Col span={8} style={{ marginLeft: "32px" }}>
+            <Col span={8}>
               <List
                 style={{ minHeight: "664px" }}
                 itemLayout="horizontal"
@@ -140,9 +161,20 @@ export default function PostsView() {
                 renderItem={post => {
                   const { author, title, createdAt, twitterUsername, ytChannelId, thresholdETH } = post;
                   return (
-                    <Link to={`/posts/${post.objectId}`}>
-                      <List.Item>
+                    <Link
+                      to={`/posts/${post.objectId}`}
+                      onClick={() => {
+                        if (selected === post.objectId) {
+                          // setSelected();
+                          // changeLocation("/posts");
+                        } else {
+                          setSelected(post.objectId);
+                        }
+                      }}
+                    >
+                      <List.Item style={selected === post.objectId ? { backgroundColor: "#90caf9" } : {}}>
                         <List.Item.Meta
+                          style={{ paddingLeft: "16px" }}
                           avatar={<ProfileBadge {...author} />}
                           title={
                             <Col span={24}>
@@ -176,7 +208,7 @@ export default function PostsView() {
                 }}
               ></List>
             </Col>
-            <Col span={15} style={{ paddingLeft: "16px" }}>
+            <Col span={15} style={{ paddingLeft: "32px" }}>
               <Switch>
                 {posts.map((post, key) => (
                   <Route
@@ -192,8 +224,9 @@ export default function PostsView() {
           <Row>
             <Pagination
               defaultCurrent={1}
-              defaultPageSize={8}
+              defaultPageSize={PAGE_SIZE}
               onChange={page => {
+                console.log(`Set page: ${page}`);
                 setPage(page);
               }}
               total={postCount}
