@@ -48,14 +48,26 @@ export default function AppBar() {
       <Row className="app-bar-container">
         <Col span={6}>
           <Link to={`/`}>
-            <HomeOutlined className={`icon ${currentTheme}`} />
+            <Button icon={<HomeOutlined className={`icon ${currentTheme}`} />} />
           </Link>
         </Col>
         <Col span={6}>
-          <Link to={`/posts/`} style={{ verticalAlign: "baseline" }}>
+          <Link to={`/posts/`} style={{ verticalAlign: "-webkit-baseline-middle" }}>
             <Badge dot={showContractNotification}>
               <Button
-                icon={<img src="/mysocialcontract.svg" className={`img ${currentTheme}`} style={{ height: "38px" }} />}
+                className="img-button"
+                icon={
+                  <svg
+                    // src="/mysocialcontract.svg"
+                    className={`img ${currentTheme}`}
+                    style={{
+                      height: "38px",
+                      width: "38px",
+                      backgroundSize: "38px 38px",
+                      backgroundImage: "url(/mysocialcontract.svg)",
+                    }}
+                  />
+                }
                 onClick={() => {
                   setShowContractNotification(false);
                 }}
