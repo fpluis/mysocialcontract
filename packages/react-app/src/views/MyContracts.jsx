@@ -242,7 +242,7 @@ const ConditionsModal = ({ visible, title, onOk, onCancel, needsLink, isSuccessf
         />
       ) : isCheckingConditions ? (
         <div style={{ width: "100%", textAlign: "center" }}>
-          <h1>Checking conditions...</h1>
+          <h1>Checking conditions... Hang tight, this might take a while.</h1>
           <Spin style={{ width: "100%" }} size="large" />
         </div>
       ) : (

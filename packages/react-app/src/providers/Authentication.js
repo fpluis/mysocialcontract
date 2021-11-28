@@ -125,24 +125,25 @@ export const AuthenticationProvider = ({ children = null }) => {
       });
   };
 
-  // const btoa = string => Buffer.from(string).toString("base64");
-
-  const setUserAttribute = async (prop, value, isFile = false, isIPFS = false) => {
-    let actualValue = value;
-    if (isFile) {
-      if (isIPFS) {
-        const { title, content } = value;
-        actualValue = new Moralis.File(title, { base64: btoa(JSON.stringify(content)) });
-        await actualValue.saveIPFS();
-      } else {
-        const { file } = value;
-        actualValue = new Moralis.File(file.name, file);
+  const setUserAttribute = useCallback(
+    async (prop, value, isFile = false, isIPFS = false) => {
+      let actualValue = value;
+      if (isFile) {
+        if (isIPFS) {
+          const { title, content } = value;
+          console.log(`Save IPFS file '${title}' with content ${JSON.stringify(content)}`);
+          actualValue = new Moralis.File(title, { base64: btoa(JSON.stringify(content)) });
+          await actualValue.saveIPFS();
+        } else {
+          const { file } = value;
+          actualValue = new Moralis.File(file.name, file);
+        }
       }
-    }
 
-    // user.set(prop, actualValue);
-    profile.set(prop, actualValue);
-  };
+      profile.set(prop, actualValue);
+    },
+    [profile],
+  );
 
   const getAchievements = async ipfsHash => {
     const url = `${IPFS_ENDPOINT}/${ipfsHash}`;
@@ -150,22 +151,23 @@ export const AuthenticationProvider = ({ children = null }) => {
     return response.json();
   };
 
-  const putAchievements = async (contract, { ethAddress, youtubeViews, youtubeSubs, twitterFollowers, ethereum }) => {
-    // const { achievementsURL: currentAchievements }
-    const achievements = {
-      address: ethAddress,
-    };
-    // const current =
-    const file = new Moralis.File(`${user.id}-achievements`, { base64: btoa(JSON.stringify(achievements)) });
-    await file.saveIPFS();
-  };
+  // const putAchievements = async (contract, { ethAddress, youtubeViews, youtubeSubs, twitterFollowers, ethereum }) => {
+  //   // const { achievementsURL: currentAchievements }
+  //   const achievements = {
+  //     address: ethAddress,
+  //   };
+  //   // const current =
+  //   const file = new Moralis.File(`${user.id}-achievements`, { base64: btoa(JSON.stringify(achievements)) });
+  //   await file.saveIPFS();
+  // };
 
-  const updateUser = async () => {
+  const updateUser = useCallback(async () => {
     profile.unset("achievements");
     await profile.save().then(profile => {
+      console.log(`Saved profile to ${JSON.stringify(profile.toJSON())}`);
       setUpdatedAt(profile.get("updatedAt"));
     });
-  };
+  }, [profile]);
 
   const logOut = () => {
     return Moralis.User.logOut();
@@ -182,7 +184,6 @@ export const AuthenticationProvider = ({ children = null }) => {
         login,
         setUserAttribute,
         getAchievements,
-        putAchievements,
         updateUser,
         logOut,
       }}

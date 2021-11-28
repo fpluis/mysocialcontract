@@ -72,7 +72,8 @@ export const MyContractProvider = ({ children = null }) => {
   const [event, setEvent] = useState();
 
   const handleEvent = useCallback(
-    (contract, event) => {
+    event => {
+      const { contract } = event;
       console.log(`Incoming event for contract ${contract.contractAddress}:`, event);
       const { event: name, returnValues, address, transactionHash, logIndex } = event;
       const eventKey = `${transactionHash}-${logIndex}`;
@@ -124,27 +125,36 @@ export const MyContractProvider = ({ children = null }) => {
           console.log(`Provider is paid`);
           contract.isProviderPaid = true;
         }
-
-        setContracts(contracts => [...contracts]);
-        setNotification("contracts", true);
       }
 
-      setEvent(event);
+      setContracts(contracts => [...contracts]);
+      setNotification("contracts", true);
+      // setEvent(event);
     },
     [contracts, eventMap, setNotification, setUserAttribute],
   );
 
-  const createEventEmitter = contract => {
-    const { contractAddress } = contract;
-    // console.log(`Create emitter for ${contractAddress}`);
-    const { events: contractEventListener } = blockchain.getContract(contractAddress);
-    const emitter = contractEventListener.allEvents({});
-    emitter.on("data", async function (event) {
-      console.log(`Event received: ${JSON.stringify(event)}`);
-      handleEvent(contract, event);
-    });
-    return emitter;
-  };
+  useEffect(() => {
+    if (event) {
+      handleEvent(event);
+    }
+  }, [event]);
+
+  const createEventEmitter = useCallback(
+    contract => {
+      const { contractAddress } = contract;
+      // console.log(`Create emitter for ${contractAddress}`);
+      const { events: contractEventListener } = blockchain.getContract(contractAddress);
+      const emitter = contractEventListener.allEvents({});
+      emitter.on("data", async function (event) {
+        console.log(`Event received: ${JSON.stringify(event)}`);
+        event.contract = contract;
+        setEvent(event);
+      });
+      return emitter;
+    },
+    [contracts],
+  );
 
   useEffect(async () => {
     console.log(
@@ -156,6 +166,7 @@ export const MyContractProvider = ({ children = null }) => {
       console.log(`LOAD CONTRACTS`);
       const contracts = await remoteStorage.getContracts({ ownerId: myUserId, providerId: myUserId });
       setContracts(contracts);
+      console.log(`Contracts loaded ${JSON.stringify(contracts.map(({ contractAddress }) => contractAddress))}`);
       eventEmitters.forEach(listener => {
         listener.removeAllListeners();
       });
@@ -169,7 +180,10 @@ export const MyContractProvider = ({ children = null }) => {
       subscription.on("create", async contractObject => {
         console.log(`Create contract event; object`, contractObject);
         const contract = await remoteStorage.hydrateContract(contractObject);
-        setContracts(currentContracts => [contract, ...currentContracts]);
+        setContracts(currentContracts => {
+          console.log(`New contracts after creation: ${JSON.stringify([contract, ...currentContracts])}`);
+          return [contract, ...currentContracts];
+        });
         setEventEmitters(emitters => [...emitters, createEventEmitter(contract)]);
       });
       setContractSubscription(subscription);
@@ -178,7 +192,7 @@ export const MyContractProvider = ({ children = null }) => {
   }, [user.authenticated(), myUserId, blockchain.isReady]);
 
   return (
-    <ContractProviderContext.Provider value={{ contracts, setContracts, hasLoaded, event }}>
+    <ContractProviderContext.Provider value={{ contracts, hasLoaded, event }}>
       {children}
     </ContractProviderContext.Provider>
   );
