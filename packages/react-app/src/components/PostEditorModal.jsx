@@ -112,11 +112,9 @@ export default function PostEditorModal({
             loading={isSearching}
             onSearch={username => {
               setIsSearching(true);
-              console.log(`Search for youtube channel ${username}`);
               Moralis.Cloud.run("getYoutubeChannelId", {
                 username,
               }).then(ytChannelId => {
-                console.log(`Response: ${ytChannelId}`);
                 form.setFieldsValue({
                   ytChannelId,
                 });
@@ -132,7 +130,6 @@ export default function PostEditorModal({
             placeholder="Use the search above with your channel's name"
             onChange={event => {
               const { value } = event.target;
-              console.log(`Value, `, value);
               if (value === "") {
                 setHasAddedYtChannel(false);
               } else {
@@ -185,7 +182,6 @@ export default function PostEditorModal({
             tooltip="Your Twitter handle without the '@'. You can find this on Twitter by clicking on 'Profile'"
             onChange={event => {
               const { value } = event.target;
-              console.log(`Value, `, value);
               if (value === "") {
                 setHasAddedTwitterUser(false);
               } else {

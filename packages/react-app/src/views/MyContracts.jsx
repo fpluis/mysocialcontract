@@ -111,7 +111,6 @@ const renderContract = ({ contract, key, myEthAddress, withdraw, openConditionsM
                     style={{ marginRight: "8px", float: "right" }}
                     onClick={async () => {
                       await withdraw(contract);
-                      // console.log(`Withdraw result: ${JSON.stringify(result)},`, result);
                     }}
                   >
                     Withdraw funds
@@ -313,7 +312,6 @@ export default function ContractList() {
   const contractsIOwn = contracts.filter(contract => contract.ownerId === myUserId);
   const contractsIProvide = contracts.filter(contract => contract.providerId === myUserId);
 
-  console.log(`Received event ${JSON.stringify(event)}`);
   return (
     <>
       {!hasLoaded && <Spin size="large" style={{ width: "100%", marginTop: "64px" }} />}

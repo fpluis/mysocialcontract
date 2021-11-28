@@ -68,7 +68,6 @@ export default function ProfileView() {
   useMemo(() => {
     if (user.authenticated() && profile.userId) {
       const { username = "", description = "", profilePicture = { url: "" }, achievements = {} } = profile;
-      console.log(`Setting props from ${JSON.stringify(profile)}`);
       const props = { username, description };
 
       if (profilePicture && profilePicture.url) {

@@ -103,7 +103,6 @@ export default function HomeView() {
                   <Button
                     onClick={async () => {
                       const user = await login({ signingMessage: "Log into Mysocialcontract" });
-                      console.log(`Logged in as user ${JSON.stringify(user)}`);
                     }}
                   >
                     Log In

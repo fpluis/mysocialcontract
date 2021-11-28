@@ -37,7 +37,6 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
         <Button
           icon={<FormOutlined />}
           onClick={() => {
-            console.log(`Compose contract with post ${JSON.stringify(post)}`);
             onComposeContract(offer, post);
           }}
         />
@@ -87,7 +86,6 @@ const renderOffer = ({ offer, post, key, onRejectOffer, onComposeContract, showP
 };
 
 export default function OfferList({ offers, post, onRejectOffer, onComposeContract, showPostLink = true }) {
-  console.log(`Render offer list; post: ${JSON.stringify(post)}`);
   return (
     <List
       itemLayout="vertical"

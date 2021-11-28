@@ -74,11 +74,9 @@ export const MyContractProvider = ({ children = null }) => {
   const handleEvent = useCallback(
     event => {
       const { contract } = event;
-      console.log(`Incoming event for contract ${contract.contractAddress}:`, event);
       const { event: name, returnValues, address, transactionHash, logIndex } = event;
       const eventKey = `${transactionHash}-${logIndex}`;
       if (eventMap[eventKey] != null) {
-        console.log(`Event with key ${eventKey} has been handled`);
         return;
       }
 
@@ -86,7 +84,6 @@ export const MyContractProvider = ({ children = null }) => {
         eventMap[eventKey] = true;
         return eventMap;
       });
-      console.log(`Promotion event for address ${address}; contract ${JSON.stringify(contract)}:`, event);
       if (name === "OnFulfill") {
         const { _ytSubs: ytSubs, _ytViews: ytViews, _twitterFollowers: twitterFollowers } = returnValues;
         contract.ytSubs = ytSubs;
@@ -99,9 +96,6 @@ export const MyContractProvider = ({ children = null }) => {
         contract.isSuccessful = true;
         contract.balanceAtEnd = balance / 1000000000000000000;
         const achievements = toAchievements(myUserId, contracts);
-        console.log(
-          `Achievements generated from contracts ${JSON.stringify(contracts)}: ${JSON.stringify(achievements)}`,
-        );
         setUserAttribute(
           "achievementsFile",
           { title: `${myUserId}-achievements.json`, content: achievements },
@@ -115,21 +109,15 @@ export const MyContractProvider = ({ children = null }) => {
       if (name === "Withdraw") {
         const { amount, withdrawer } = returnValues;
         contract.balance -= Number(amount);
-        console.log(
-          `Handling withdraw event; Contract owner: ${contract.owner.ethAddress}; withdrawer: ${withdrawer}; amount ${amount}; new balance ${contract.balance}`,
-        );
         if (contract.owner.ethAddress.toLowerCase() === withdrawer.toLowerCase()) {
-          console.log(`Owner is paid`);
           contract.isOwnerPaid = true;
         } else {
-          console.log(`Provider is paid`);
           contract.isProviderPaid = true;
         }
       }
 
       setContracts(contracts => [...contracts]);
       setNotification("contracts", true);
-      // setEvent(event);
     },
     [contracts, eventMap, setNotification, setUserAttribute],
   );
@@ -143,11 +131,9 @@ export const MyContractProvider = ({ children = null }) => {
   const createEventEmitter = useCallback(
     contract => {
       const { contractAddress } = contract;
-      // console.log(`Create emitter for ${contractAddress}`);
       const { events: contractEventListener } = blockchain.getContract(contractAddress);
       const emitter = contractEventListener.allEvents({});
       emitter.on("data", async function (event) {
-        console.log(`Event received: ${JSON.stringify(event)}`);
         event.contract = contract;
         setEvent(event);
       });
@@ -157,16 +143,9 @@ export const MyContractProvider = ({ children = null }) => {
   );
 
   useEffect(async () => {
-    console.log(
-      `Run load-effect; user.authed? ${user.authenticated()}; myuserid ${myUserId}; blockchain ready ${
-        blockchain.isReady
-      }; has loaded? ${hasLoaded}`,
-    );
     if (user.authenticated() && myUserId && blockchain.isReady && !hasLoaded) {
-      console.log(`LOAD CONTRACTS`);
       const contracts = await remoteStorage.getContracts({ ownerId: myUserId, providerId: myUserId });
       setContracts(contracts);
-      console.log(`Contracts loaded ${JSON.stringify(contracts.map(({ contractAddress }) => contractAddress))}`);
       eventEmitters.forEach(listener => {
         listener.removeAllListeners();
       });
@@ -178,10 +157,8 @@ export const MyContractProvider = ({ children = null }) => {
 
       const subscription = await remoteStorage.subscribeToContracts(myUserId);
       subscription.on("create", async contractObject => {
-        console.log(`Create contract event; object`, contractObject);
         const contract = await remoteStorage.hydrateContract(contractObject);
         setContracts(currentContracts => {
-          console.log(`New contracts after creation: ${JSON.stringify([contract, ...currentContracts])}`);
           return [contract, ...currentContracts];
         });
         setEventEmitters(emitters => [...emitters, createEventEmitter(contract)]);

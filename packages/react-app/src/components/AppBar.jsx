@@ -23,7 +23,6 @@ export default function AppBar() {
   }, [setRoute, window.location.hash]);
 
   useEffect(() => {
-    console.log(`Notifications: ${JSON.stringify(notifications)}; route ${route}`);
     if (route.startsWith("/posts") || route.startsWith("/me")) {
       setShowContractNotification(false);
     } else if (notifications.contracts === true || notifications.requests === true || notifications.offers === true) {
@@ -110,7 +109,6 @@ export default function AppBar() {
                 icon={<LoginOutlined alt="Log in" className={`icon ${currentTheme}`}></LoginOutlined>}
                 onClick={async () => {
                   const user = await login({ signingMessage: "Log into Mysocialcontract" });
-                  console.log(`Logged in as user ${JSON.stringify(user)}`);
                 }}
               />
             </Link>

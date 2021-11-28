@@ -36,7 +36,6 @@ export default function PostsView() {
 
   const changeLocation = useCallback(
     newLocation => {
-      console.log(`Change location to ${newLocation}`);
       window.location.hash = `#${newLocation}`;
     },
     [window.location.hash],
@@ -44,20 +43,16 @@ export default function PostsView() {
 
   useEffect(() => {
     const newRoute = window.location.hash.replace(/^#/, "");
-    console.log(`New route: ${JSON.stringify(newRoute)}`);
     setRoute(newRoute);
     if (newRoute === "/me/offers" && notifications.offers === true) {
-      console.log(`@offers`);
       setNotification("offers", false);
     }
 
     if (newRoute === "/me/requests" && notifications.requests === true) {
-      console.log(`@requests`);
       setNotification("requests", false);
     }
 
     if (newRoute === "/me/contracts" && notifications.contracts === true) {
-      console.log(`@contracts`);
       setNotification("contracts", false);
     }
   }, [setRoute, notifications, window.location.hash]);
@@ -65,14 +60,10 @@ export default function PostsView() {
   useMemo(async () => {
     const posts = await remoteStorage.getPosts({ status: "active", page: page - 1 });
     setPosts(posts);
-    console.log(`Posts loaded`);
-    // changeLocation(`/posts/`);
   }, [page]);
 
   useMemo(async () => {
-    console.log(`Effect; posts ${JSON.stringify(posts.length)}, route ${route}`);
     if (posts.length > 0 && route === "/posts/") {
-      console.log(`Post 0: ${JSON.stringify(posts[0])}`);
       setRoute(`/posts/${posts[0].objectId}`);
       setSelected(posts[0].objectId);
       changeLocation(`/posts/${posts[0].objectId}`);
@@ -226,7 +217,6 @@ export default function PostsView() {
               defaultCurrent={1}
               defaultPageSize={PAGE_SIZE}
               onChange={page => {
-                console.log(`Set page: ${page}`);
                 setPage(page);
               }}
               total={postCount}

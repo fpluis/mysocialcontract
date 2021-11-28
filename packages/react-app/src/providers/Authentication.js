@@ -34,13 +34,7 @@ export const AuthenticationProvider = ({ children = null }) => {
 
   const setNotification = useCallback(
     async (notificationName, value = false) => {
-      console.log(
-        `Updating notifications locally with '${notificationName}' = '${value}'; current ${JSON.stringify(
-          notifications.toJSON(),
-        )}`,
-      );
       if (notifications.get(notificationName) !== value) {
-        console.log(`Value updated; persisting to db`);
         notifications.set(notificationName, value);
         await notifications.save();
       }
@@ -80,7 +74,6 @@ export const AuthenticationProvider = ({ children = null }) => {
 
       const subscription = await subscribeToNotifications(user.id);
       subscription.on("update", notifications => {
-        console.log(`Update to notifications from server: ${notifications}`);
         setNotifications(notifications);
       });
       setNotificationsSubscription(subscription);
@@ -138,7 +131,6 @@ export const AuthenticationProvider = ({ children = null }) => {
           notifications.save();
         }
 
-        console.log("Authenticated user's profile:", profile);
         setProfile(profile);
       })
       .catch(error => {
@@ -152,7 +144,6 @@ export const AuthenticationProvider = ({ children = null }) => {
       if (isFile) {
         if (isIPFS) {
           const { title, content } = value;
-          console.log(`Save IPFS file '${title}' with content ${JSON.stringify(content)}`);
           actualValue = new Moralis.File(title, { base64: btoa(JSON.stringify(content)) });
           await actualValue.saveIPFS();
         } else {
@@ -172,20 +163,9 @@ export const AuthenticationProvider = ({ children = null }) => {
     return response.json();
   };
 
-  // const putAchievements = async (contract, { ethAddress, youtubeViews, youtubeSubs, twitterFollowers, ethereum }) => {
-  //   // const { achievementsURL: currentAchievements }
-  //   const achievements = {
-  //     address: ethAddress,
-  //   };
-  //   // const current =
-  //   const file = new Moralis.File(`${user.id}-achievements`, { base64: btoa(JSON.stringify(achievements)) });
-  //   await file.saveIPFS();
-  // };
-
   const updateUser = useCallback(async () => {
     profile.unset("achievements");
     await profile.save().then(profile => {
-      console.log(`Saved profile to ${JSON.stringify(profile.toJSON())}`);
       setUpdatedAt(profile.get("updatedAt"));
     });
   }, [profile]);
